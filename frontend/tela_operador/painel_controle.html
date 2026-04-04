@@ -199,17 +199,30 @@ const API_URL = 'http://169.254.201.188:3300';
         </main>
     </div> 
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const menuBtn = document.getElementById('menu-btn');
-            const sidebar = document.getElementById('sidebar');
-            
-            if (menuBtn && sidebar) {
-                menuBtn.addEventListener('click', () => {
-                    sidebar.classList.toggle('collapsed');
-                });
-            }
-        });
-    </script>
+    // Sidebar com animação GSAP
+<script>const menuBtn = document.getElementById('menu-btn');
+const sidebar = document.getElementById('sidebar');
+const sidebarTexts = document.querySelectorAll('.sidebar-text');
+
+let isCollapsed = false;
+if (menuBtn && sidebar) {
+    menuBtn.addEventListener('click', () => {
+        isCollapsed = !isCollapsed;
+        if (isCollapsed) {
+            sidebar.classList.add('is-collapsed');
+            gsap.to(sidebarTexts, { 
+                opacity: 0, x: -10, duration: 0.2, stagger: 0.02, ease: "power1.inOut", 
+                onComplete: () => sidebarTexts.forEach(t => t.style.display = 'none') 
+            });
+            gsap.to(sidebar, { width: "80px", duration: 0.4, ease: "power2.inOut", delay: 0.1 });
+        } else {
+            sidebar.classList.remove('is-collapsed');
+            sidebarTexts.forEach(t => t.style.display = '');
+            gsap.to(sidebar, { width: "16rem", duration: 0.4, ease: "power2.inOut" });
+            gsap.to(sidebarTexts, { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power2.out", delay: 0.2 });
+        }
+    });
+}</script>
+
 </body>
 </html>
