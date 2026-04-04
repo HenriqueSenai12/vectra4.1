@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VECTRA - Controle Operacional</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="painel_principal.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        vectra: {
+                            dark: '#1E3A5F',    
+                            light: '#4FA3FF',   
+                            base: '#0B1120',    
+                            panel: '#152036'    
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="font-sans antialiased text-white transition-colors duration-300">
+    
+    <div id="aurora-container">
+        <div class="aurora-extra"></div>
+    </div>
+
+    <div class="relative z-10 flex h-screen w-screen overflow-hidden">
+        
+        <aside id="sidebar" class="w-64 bg-[#0E1F35]/50 backdrop-blur-xl border-r border-white/10 h-full flex flex-col z-40 transition-all duration-300 shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
+            <div class="h-20 flex items-center justify-start px-6 border-b border-white/5 overflow-hidden">
+                <div class="flex items-center container-logo">
+                    <img src="../../image/logo_2.png" alt="Logo Vectra" class="transition-all duration-300">
+                    <span class="sidebar-text text-white font-bold text-xl ml-3 tracking-wider whitespace-nowrap transition-opacity duration-300">VECTRA</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 py-6 flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden no-scrollbar">
+                <a href="painel_principal.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                   <i class="ph ph-house text-2xl min-w-[24px]"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Home</span>
+                </a>
+                
+              
+                <a href="painel_config.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-gear text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Configurações</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-white/5 overflow-hidden">
+                <a href="../login.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-2 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                   <i class="ph ph-sign-out text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Sair</span>
+                </a>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-full w-full transition-all duration-300 overflow-y-auto">
+            
+            <header class="h-20 bg-[#0E1F35]/50 backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.2)] flex items-center justify-between px-8 z-10 sticky top-0 border-b border-white/10">
+                <div class="flex items-center gap-4">
+                    <button id="menu-btn" class="text-white hover:text-vectra-light transition-colors">
+                        <i class="ph ph-list text-3xl"></i>
+                    </button>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Painel de Controle</h1>
+                        <p class="text-sm text-slate-400">Comunicação direta com EV3</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <button class="text-slate-400 hover:text-white transition-colors relative">
+                        <i class="ph ph-bell text-2xl"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-vectra-base"></span>
+                    </button>
+
+                    <img id="userAvatarHeader" src="https://ui-avatars.com/api/?name=Operador+Vectra&background=1E3A5F&color=fff" alt="Avatar" class="w-10 h-10 rounded-full border border-white/20 cursor-pointer user-avatar-header">
+                </div>
+            </header>
+            
+            <div class="bg-[#152036]/80 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl flex flex-col p-8 card-animado max-w-4xl mx-auto w-full mt-10">
+    
+                <div class="flex flex-col sm:flex-row justify-between items-center border-b border-white/10 pb-6 mb-8 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                            <i class="ph ph-cpu text-vectra-light text-3xl"></i>
+                            Controle Operacional
+                        </h2>
+                        <p class="text-slate-400 text-sm mt-1">Controle direto de processos e acionamento do CLP.</p>
+                    </div>
+
+                    <div class="bg-[#0B1120] border border-white/10 rounded-xl px-6 py-3 flex items-center gap-4 min-w-[250px] shadow-inner">
+                        <div class="relative flex h-4 w-4">
+                            <span id="status-ping" class="absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75 hidden"></span>
+                            <span id="status-dot" class="relative inline-flex rounded-full h-4 w-4 bg-slate-500"></span>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-slate-500 font-semibold uppercase tracking-wider">Status do Sistema</span>
+                            <span id="status-text" class="block text-slate-300 font-mono font-bold text-lg">DESLIGADO</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-6 sm:gap-10 py-4">
+                    
+                    <button id="btn-play" class="group relative flex flex-col items-center justify-center w-36 h-36 sm:w-48 sm:h-48 bg-[#0B1120] border border-emerald-500/20 rounded-2xl hover:bg-emerald-500/10 hover:border-emerald-500 transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.05)] hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                        <div class="absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
+                        <i class="ph-fill ph-play-circle text-6xl sm:text-7xl text-emerald-500 mb-2 group-hover:scale-110 transition-transform duration-300"></i>
+                        <span class="text-emerald-500 font-bold tracking-widest text-sm sm:text-base">INICIAR</span>
+                    </button>
+
+                    
+                    <button id="btn-stop" class="group relative flex flex-col items-center justify-center w-36 h-36 sm:w-48 sm:h-48 bg-[#0B1120] border border-red-500/20 rounded-2xl hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 shadow-[0_0_15px_rgba(239,68,68,0.05)] hover:shadow-[0_0_30px_rgba(239,68,68,0.3)] hover:animate-pulse">
+                        <div class="absolute inset-0 bg-gradient-to-t from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
+                        <i class="ph-fill ph-power text-6xl sm:text-7xl text-red-500 mb-2 group-hover:scale-110 transition-transform duration-300"></i>
+                        <span class="text-red-500 font-bold tracking-widest text-sm sm:text-base">DESLIGAR</span>
+                    </button>
+
+                </div>
+            </div>
+           
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                    const btnPlay = document.getElementById('btn-play');
+                    const btnStop = document.getElementById('btn-stop');
+                    
+                    const statusText = document.getElementById('status-text');
+                    const statusDot = document.getElementById('status-dot');
+                    const statusPing = document.getElementById('status-ping');
+
+                    // URL base apontando DIRETAMENTE para o IP do EV3 via cabo USB
+const API_URL = 'http://169.254.201.188:3300';
+
+                    function updateStatus(state, colorClass, pingColorClass) {
+                        statusText.innerText = state;
+                        statusText.className = `block font-mono font-bold text-lg ${colorClass}`;
+                        statusDot.className = `relative inline-flex rounded-full h-4 w-4 ${colorClass.replace('text-', 'bg-')}`;
+                        
+                        if(pingColorClass) {
+                            statusPing.className = `animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${pingColorClass}`;
+                            statusPing.style.display = 'block';
+                        } else {
+                            statusPing.style.display = 'none';
+                        }
+                    }
+
+                    // Função para fazer o pedido HTTP direto para o servidor Python no EV3
+                    async function mandarComandoParaEV3(comando, estadoTela, cor, corPing = '') {
+                        try {
+                            updateStatus('ENVIANDO...', 'text-slate-400', '');
+                            
+                            // Requisição GET simples
+                            const resposta = await fetch(`${API_URL}/${comando}`, {
+                                method: 'GET'
+                            });
+                            
+                            if (resposta.ok) {
+                                updateStatus(estadoTela, cor, corPing);
+                            } else {
+                                updateStatus('ERRO NO COMANDO', 'text-red-500', '');
+                            }
+                        } catch (erro) {
+                            console.error('Erro de conexão com o EV3:', erro);
+                            updateStatus('ROBÔ OFFLINE', 'text-red-500', '');
+                            alert("Não foi possível conectar ao EV3. Verifique se o main.py está rodando no robô e se o cabo USB está conectado.");
+                        }
+                    }
+
+                    // Ações dos botões (disparam a requisição direto para o robô)
+                    if(btnPlay) {
+                        btnPlay.addEventListener('click', () => {
+                            mandarComandoParaEV3('play', 'EM OPERAÇÃO', 'text-emerald-500', 'bg-emerald-400');
+                        });
+                    }
+
+                    if(btnStop) {
+                        btnStop.addEventListener('click', () => {
+                            mandarComandoParaEV3('stop', 'DESLIGADO', 'text-red-500', '');
+                        });
+                    }
+                });
+            </script>
+            
+        </main>
+    </div> 
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const menuBtn = document.getElementById('menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            
+            if (menuBtn && sidebar) {
+                menuBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('collapsed');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

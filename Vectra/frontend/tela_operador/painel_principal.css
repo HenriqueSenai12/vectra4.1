@@ -1,0 +1,256 @@
+/* ==========================================================================
+   1. UTILITÁRIOS GERAIS
+   ========================================================================== */
+
+/* Esconder barra de rolagem mantendo a funcionalidade */
+.no-scrollbar::-webkit-scrollbar { 
+    display: none; 
+}
+.no-scrollbar { 
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+}
+
+/* Container de conteúdo base */
+.content-container {
+    position: relative; 
+    z-index: 2; 
+}
+
+/* ==========================================================================
+   2. FUNDO AURORA WAVES (IDENTIDADE VECTRA)
+   ========================================================================== */
+body {
+    background-color: #050a14; 
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+}
+
+#aurora-container {
+    position: fixed;
+    inset: -100px;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.35; /* Brilho suave */
+    filter: blur(150px); /* Espalhamento da luz */
+}
+
+/* Bolas de luz da Aurora */
+#aurora-container::before,
+#aurora-container::after {
+    content: "";
+    position: absolute;
+    width: 45vw;  
+    height: 45vh;
+    border-radius: 50%;
+    background: #4FA3FF; 
+    mix-blend-mode: hard-light;
+}
+
+/* LUZ 1: Superior Esquerdo */
+#aurora-container::before {
+    top: -10%;   
+    left: -10%;  
+    animation: flutuarCanto1 25s infinite alternate ease-in-out;
+    opacity: 0.8; 
+}
+
+/* LUZ 2: Inferior Direito */
+#aurora-container::after {
+    bottom: -10%; 
+    right: -10%;  
+    animation: flutuarCanto2 30s infinite alternate-reverse ease-in-out;
+    opacity: 0.5; 
+}
+
+/* LUZ 3 (Extra): Desativada para manter visual clean */
+.aurora-extra { 
+    display: none; 
+}
+
+@keyframes flutuarCanto1 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(8vw, 8vh) scale(1.1); } 
+}
+
+@keyframes flutuarCanto2 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-8vw, -8vh) scale(1.05); } 
+}
+
+
+/* ==========================================================================
+   3. SIDEBAR E LOGO
+   ========================================================================== */
+
+/* Animação e comportamento da Sidebar ao encolher */
+#sidebar {
+    overflow: hidden; 
+    white-space: nowrap; 
+    transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+#sidebar.collapsed {
+    width: 0 !important; 
+    opacity: 0;     
+    padding: 0;     
+    border-right: none;
+}
+
+/* Logo Vectra no painel */
+.container-logo img {
+    position: relative;
+    right: 55.75px;
+    height: 80px;       
+    width: auto;        
+    max-width: 150px;   
+}
+
+.container-logo span {
+    font-size: 20px;    
+    margin-left: -100px; 
+}
+
+/* Item Ativo do Menu */
+.sidebar-item.active {
+    background-color: rgba(79, 163, 255, 0.1); 
+    color: #4FA3FF !important; 
+}
+
+.sidebar-item.active i {
+    transform: scale(1.1);
+    color: #4FA3FF;
+}
+
+.sidebar-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 4px;
+    height: 32px;
+    background-color: #4FA3FF;
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 10px rgba(79, 163, 255, 0.8);
+}
+
+
+/* ==========================================================================
+   4. CARDS E ANIMAÇÕES DE ENTRADA
+   ========================================================================== */
+
+@keyframes subirESurgir {
+    from { 
+        opacity: 0; 
+        transform: translateY(40px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+.card-animado {
+    opacity: 0; 
+    animation: subirESurgir 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    position: relative; 
+    overflow: hidden; 
+}
+
+/* Efeito de Luz Sutil no Canto Inferior Direito do Card */
+.card-animado::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    z-index: -10; 
+    background: radial-gradient(circle at bottom right, rgba(79, 163, 255, 0.4), transparent);
+    border-radius: 14px; 
+    opacity: 1; 
+}
+
+/* Classes para atrasar a entrada de múltiplos cards (Efeito Cascata) */
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+.delay-6 { animation-delay: 0.6s; }
+
+
+/* ==========================================================================
+   5. EFEITOS ESPECIAIS: BORDAS NEON NO HOVER
+   ========================================================================== */
+
+@keyframes girarLuz {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hover-gradient-border {
+    position: relative;
+    z-index: 1;
+    overflow: hidden; 
+}
+
+.hover-gradient-border::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(
+        transparent, 
+        rgba(79, 163, 255, 0.3), 
+        #4FA3FF, 
+        rgba(79, 163, 255, 0.3), 
+        transparent 30%
+    );
+    animation: girarLuz 4s linear infinite;
+    opacity: 0; 
+    transition: opacity 0.5s ease;
+    z-index: -2;
+}
+
+.hover-gradient-border::after {
+    content: "";
+    position: absolute;
+    inset: 2px; 
+    background: #152036; 
+    border-radius: 14px; 
+    z-index: -1;
+    transition: background 0.3s ease;
+}
+
+.hover-gradient-border:hover::before {
+    opacity: 1;
+}
+
+.card-com-gradiente::after {
+    background: linear-gradient(to bottom right, #1E3A5F, #0E1F35) !important;
+}
+.box-upload.drag-active {
+    border-color: #4FA3FF;
+    background-color: rgba(79, 163, 255, 0.1);
+}
+/* =========================================
+   SCROLLBAR PERSONALIZADA (TEMA VECTRA)
+   ========================================= */
+::-webkit-scrollbar {
+    width: 8px; /* Largura da barra vertical */
+    height: 8px; /* Altura da barra horizontal (se houver) */
+}
+
+::-webkit-scrollbar-track {
+    background: #050a14; /* Fundo escuro igual ao body */
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1E3A5F; /* Azul escuro do Vectra */
+    border-radius: 10px; /* Bordas arredondadas */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4FA3FF; /* Brilha com o Azul Claro ao passar o mouse */
+}
