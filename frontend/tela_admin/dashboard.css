@@ -1,0 +1,444 @@
+/* =========================================
+   1. LAYOUT GERAL E SCROLLBAR
+   ========================================= */
+body {
+    background-color: #0B1120; /* Cor base escura para o fundo */
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+}
+
+/* Estado recolhido da Sidebar */
+#sidebar.is-collapsed {
+    width: 80px !important;
+}
+
+/* Esconde o texto e ajusta o alinhamento dos ícones */
+#sidebar.is-collapsed .sidebar-text {
+    display: none;
+    opacity: 0;
+}
+
+#sidebar.is-collapsed .sidebar-item {
+    justify-content: center;
+    padding: 0.75rem;
+}
+
+/* Tooltips (Balãozinho que aparece ao passar o mouse no menu encolhido) */
+#sidebar.is-collapsed .sidebar-item:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    margin-left: 1rem;
+    background: #06b6d4; /* Cor ciano do seu tema */
+    color: white;
+    padding: 0.5rem 0.8rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 50;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.content-container {
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+    
+    /* Garante que o container use toda a largura, mas cresça se os gráficos/botões forem maiores */
+    min-width: auto;
+    width: max-content; 
+    
+    /* FIX: Cria o espaço (respiro) no final do scroll lateral! 
+       Isso empurra a borda da tela 2.5rem (aprox 40px) para a direita dos botões */
+    padding-right: 2.5rem; 
+}
+
+
+/* Esconder barra de rolagem padrão */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Scrollbar customizada para Tabelas/Áreas internas */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #334155; border-radius: 10px; }
+
+
+/* =========================================
+   2. FUNDO AURORA WAVES
+   ========================================= */
+#aurora-container {
+    position: fixed;
+    inset: -100px;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.25; /* Suavizado para não ofuscar os dados */
+    filter: blur(120px); 
+}
+
+#aurora-container::before,
+#aurora-container::after {
+    content: "";
+    position: absolute;
+    width: 45vw;  
+    height: 45vh;
+    border-radius: 50%;
+    background: #06b6d4; /* Ajustado para o Ciano do projeto */
+    mix-blend-mode: hard-light;
+}
+
+#aurora-container::before {
+    top: -10%;   
+    left: -10%;  
+    animation: flutuarCanto1 25s infinite alternate ease-in-out;
+    opacity: 0.6; 
+}
+
+#aurora-container::after {
+    bottom: -10%; 
+    right: -10%;  
+    background: #3b82f6; /* Azul secundário para contraste */
+    animation: flutuarCanto2 30s infinite alternate-reverse ease-in-out;
+    opacity: 0.4; 
+}
+
+.aurora-extra { display: none; }
+
+@keyframes flutuarCanto1 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(8vw, 8vh) scale(1.1); } 
+}
+
+@keyframes flutuarCanto2 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-8vw, -8vh) scale(1.05); } 
+}
+
+
+/* =========================================
+   3. SIDEBAR E MENU LATERAL
+   ========================================= */
+#sidebar {
+    overflow-x: hidden !important;
+    width: 16rem; /* AQUI NÃO PODE TER !important para o GSAP funcionar */
+}
+
+/* Evita que o texto quebre de linha na animação */
+.sidebar-text {
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* Tooltip - Base Invisível */
+.sidebar-item { position: relative; }
+.sidebar-item::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%) translateX(10px);
+    background-color: #06b6d4; /* Ciano do projeto */
+    color: #0B1120;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    z-index: 100;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Tooltip - Aparece apenas quando a sidebar está recolhida */
+#sidebar.is-collapsed .sidebar-item:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(15px);
+}
+
+/* Estilos de Item Ativo */
+.sidebar-item.active {
+    background-color: rgba(6, 182, 212, 0.1); 
+    color: #06b6d4 !important; 
+}
+
+.sidebar-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 4px;
+    height: 32px;
+    background-color: #06b6d4;
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+}
+
+.sidebar-item.active i {
+    transform: scale(1.1);
+    color: #06b6d4;
+}
+
+
+/* =========================================
+   4. LOGO VECTRA
+   ========================================= */
+.container-logo {
+    display: flex;
+    max-width: 400px;
+    align-items: center;
+    gap: 0.5rem; 
+    margin-left: -0.5rem; 
+}
+
+.container-logo img {
+    position: relative;
+    right: 55px;
+    height: 88px; 
+    width: auto;        
+    max-width: 400px;
+    flex-shrink: 0; 
+}
+
+.container-logo span {
+    position: relative ;
+    right: 100px;
+    font-size: 20px;    
+}
+
+
+/* =========================================
+   5. COMPONENTES PREMIUM (ESTILO FIGMA)
+   ========================================= */
+
+/* Paineis de vidro escuro para dar o respiro estrutural */
+.glass-panel {
+    background: rgba(15, 23, 42, 0.65); /* Fundo sutilmente translúcido */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Efeito Hover sutil nos painéis maiores */
+.glass-panel:hover {
+    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Estilo Base para os Widgets Menores (Top Row) */
+.kpi-card {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    color: #ffffff;
+    box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Degradês de fundo sutis (Neon Flow) para os KPIs */
+.kpi-gradient-cyan {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(15, 23, 42, 0.9) 70%);
+    border-left: 4px solid #06b6d4;
+}
+
+.kpi-gradient-blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(15, 23, 42, 0.9) 70%);
+    border-left: 4px solid #3b82f6;
+}
+
+.kpi-gradient-pink {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(15, 23, 42, 0.9) 70%);
+    border-left: 4px solid #ec4899;
+}
+
+.kpi-gradient-red {
+    background: linear-gradient(135deg, rgba(248, 113, 113, 0.15) 0%, rgba(15, 23, 42, 0.9) 70%);
+    border-left: 4px solid #FF2828; /* Vermelho claro (red-400) para combinar com o ícone */
+}
+
+
+
+/* =========================================
+   6. ANIMAÇÕES GERAIS E GRÁFICOS (APEXCHARTS)
+   ========================================= */
+@keyframes subirESurgir {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card-animado {
+    opacity: 0; 
+    animation: subirESurgir 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Ajustes estruturais para evitar que os gráficos esmaguem */
+/* Gráficos de Linha e Barra esticam para preencher o espaço */
+#line-chart, #bar-chart {
+    position: relative !important;
+    z-index: 50 !important;
+    display: block !important;
+    width: 100% !important;
+    min-height: 280px !important;
+    background: transparent !important;
+}
+
+/* Gráfico de Rosca (Donut) com alinhamento centralizado */
+#donut-chart {
+    position: relative !important;
+    z-index: 50 !important;
+    display: flex !important;
+    align-items: center; /* Centraliza verticalmente */
+    justify-content: center; /* Centraliza horizontalmente */
+    width: 100% !important;
+    min-height: 250px !important; /* Altura um pouco menor que os demais */
+    background: transparent !important;
+}
+
+/* Centralização do Canvas interno gerado pelo ApexCharts */
+.apexcharts-canvas {
+    position: relative !important;
+    z-index: 51 !important;
+    margin: 0 auto;
+}
+
+/* Caixinha de informação (Tooltip) bonita e contrastante */
+.apexcharts-tooltip {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    color: #fff !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    z-index: 100 !important;
+}
+
+.apexcharts-tooltip-title {
+    background: #0B1120 !important;
+    border-bottom: 1px solid #1e293b !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600;
+    padding: 8px 12px !important;
+}
+
+/* Textos e eixos dos gráficos */
+.apexcharts-text {
+    fill: #94a3b8 !important; /* Texto cinza clarinho para combinar com o tema dark */
+    font-family: 'Inter', sans-serif !important;
+}
+/* =========================================
+   7. EXPANSÃO PARA DESKTOP E MONITORES LARGOS (CHROME / BRAVE)
+   ========================================= */
+
+/* Para Notebooks e Monitores Padrão (A partir de 1024px) */
+@media (min-width: 1024px) {
+    /* Remove o limite do Tailwind e permite que o conteúdo ocupe a tela toda */
+    .content-container {
+        max-width: 96% !important;
+    }
+    
+    /* Aumenta a altura dos gráficos para respirarem melhor */
+    #line-chart, 
+    #donut-chart, 
+    #bar-chart {
+        min-height: 350px !important; 
+        height: 100% !important;
+    }
+
+    /* Aumenta a altura máxima da tabela de logs */
+    .glass-panel .max-h-72 {
+        max-height: 350px !important;
+    }
+    
+    /* Garante que o painel empurre o gráfico para baixo */
+    .glass-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+}
+
+/* Para Monitores Grandes e Ultrawide (A partir de 1440px - Ex: 1080p, 2K, 4K) */
+@media (min-width: 1440px) {
+    .content-container {
+        max-width: 98% !important; 
+    }
+
+    /* Aumenta as fontes para não ficarem minúsculas na tela grande */
+    h1.text-xl { font-size: 1.8rem !important; }
+    .kpi-card p.text-2xl { font-size: 2.2rem !important; }
+    .glass-panel h2.text-lg { font-size: 1.4rem !important; }
+    
+    /* Estica os gráficos ainda mais */
+    #line-chart, 
+    #donut-chart, 
+    #bar-chart {
+        min-height: 450px !important; 
+    }
+
+    .glass-panel .max-h-72 {
+        max-height: 450px !important;
+    }
+}
+
+/* Para Monitores Gigantes (A partir de 1920px) */
+@media (min-width: 1920px) {
+    #line-chart, 
+    #donut-chart, 
+    #bar-chart {
+        min-height: 550px !important; 
+    }
+    .glass-panel .max-h-72 {
+        max-height: 550px !important;
+    }
+    .kpi-card {
+        padding: 2.5rem !important;
+    }
+}
+
+/* Força os textos de dentro do gráfico do ApexCharts a ficarem mais legíveis no PC */
+@media (min-width: 1024px) {
+    .apexcharts-text {
+        font-size: 13px !important;
+    }
+}
+@media (min-width: 1440px) {
+    .apexcharts-text {
+        font-size: 15px !important;
+    }
+}
+/* Garante que o conteúdo principal nunca cresça além da tela por causa de bugs de JS */
+/* Garante que o conteúdo principal seja rolável em todos os dispositivos */
+main {
+    height: 100vh;
+    height: 100dvh; /* Respeita a interface do Chrome/Brave no mobile */
+    overflow-y: auto;
+    overflow-x: auto; /* FIX: Permite a rolagem horizontal (scroll para o lado) */
+    display: flex;
+    flex-direction: column;
+    
+    /* Habilita o scroll nativo e suave por toque no celular (vertical e horizontal) */
+    -webkit-overflow-scrolling: touch; 
+    
+    /* FIX: Evita recarregar a página ao puxar para baixo e evita voltar a página ao deslizar para o lado */
+    overscroll-behavior: contain; 
+    
+    /* Respiro final para garantir que o usuário consiga ver o fim da tabela de Logs */
+    padding-bottom: 4rem; 
+}
+
+
+.content-container {
+    flex-shrink: 0; /* Impede que o container se esmague ou estique bizarramente */
+}
+
+/* Trava as alturas dos ApexCharts para evitar o loop de renderização */
+.apexcharts-canvas, .apexcharts-canvas svg {
+    max-height: 100% !important;
+}

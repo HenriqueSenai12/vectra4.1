@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VECTRA - Configurações</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        vectra: {
+                            dark: '#1E3A5F',    
+                            light: '#4FA3FF',   
+                            base: '#0B1120',    
+                            panel: '#152036'    
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link rel="stylesheet" href="painel_principal.css">
+</head>
+
+<body class="font-sans antialiased text-white transition-colors duration-300">
+    
+    <div id="aurora-container">
+        <div class="aurora-extra"></div>
+    </div>
+
+    <div class="relative z-10 flex h-screen w-screen overflow-hidden">
+        
+        <aside id="sidebar" class="bg-[#0E1F35]/50 backdrop-blur-xl border-r border-white/10 h-full flex flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
+            <div class="h-20 flex items-center justify-start px-6 border-b border-white/5 overflow-hidden">
+                <div class="flex items-center container-logo">
+                    <img src="../../image/logo_2.png" alt="Logo Vectra">
+                    <span class="sidebar-text text-white font-bold text-xl ml-3 tracking-wider whitespace-nowrap">VECTRA</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 py-6 flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden no-scrollbar">
+                <a href="painel_principal.html" data-tooltip="Home" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-house text-2xl min-w-[24px]"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap">Home</span>
+                </a>
+                
+                <a href="#" data-tooltip="Registros" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-list-dashes text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap">Registros</span>
+                </a>
+                
+                <a href="painel_usuarios.html" data-tooltip="Usuários" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-users text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap">Usuários</span>
+                </a>
+                
+                <a href="painel_config.html" data-tooltip="Configurações" class="sidebar-item text-vectra-light bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-gear text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap">Configurações</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-white/5 overflow-hidden">
+                <a href="#" data-tooltip="Meu Perfil" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-2 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-user-circle text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap">Meu Perfil</span>
+                </a>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-full w-full overflow-y-auto">
+            
+            <header class="h-20 bg-[#0E1F35]/50 backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.2)] flex items-center justify-between px-8 z-10 sticky top-0 border-b border-white/10 shrink-0">
+                <div class="flex items-center gap-4">
+                    <button id="menu-btn" class="text-white hover:text-vectra-light transition-colors">
+                        <i class="ph ph-list text-3xl"></i>
+                    </button>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Configurações</h1>
+                        <p class="text-sm text-slate-400">Gerencie suas preferências e dados da conta.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <button class="text-slate-400 hover:text-white transition-colors relative">
+                        <i class="ph ph-bell text-2xl"></i>
+                    </button>
+                    <img id="user-avatar" src="https://ui-avatars.com/api/?name=Operador+Vectra&background=1E3A5F&color=fff" alt="Avatar" class="w-10 h-10 rounded-full border border-white/20 cursor-pointer">
+                </div>
+            </header>
+
+            <div class="px-8 mt-8 border-b border-white/10 flex gap-8 overflow-x-auto no-scrollbar shrink-0">
+                <button class="pb-4 text-vectra-light border-b-2 border-vectra-light font-medium whitespace-nowrap">Detalhes Pessoais</button>
+            </div>
+
+            <section class="p-8 max-w-5xl mx-auto w-full flex-1">
+                
+                <div class="bg-[#152036]/80 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl p-8 mb-8 relative group">
+                    
+                    <div class="flex justify-between items-center mb-8 pb-4 border-b border-white/10">
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            Informações Pessoais
+                        </h3>
+                        <button id="btn-edit" class="flex items-center gap-2 text-slate-400 hover:text-vectra-light transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10">
+                            <i class="ph ph-pencil-simple text-lg"></i>
+                            <span class="text-sm font-medium">Editar</span>
+                        </button>
+                    </div>
+
+                    <div id="user-info-form" class="space-y-6">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center group/row">
+                            <div class="text-slate-400 font-medium text-sm">Nome</div>
+                            <div class="md:col-span-3">
+                                <input type="text" id="input-nome" disabled 
+                                    class="w-full bg-transparent border border-transparent text-white font-medium p-2 rounded-lg transition-all focus:outline-none disabled:opacity-90 disabled:cursor-default">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center group/row">
+                            <div class="text-slate-400 font-medium text-sm">E-mail</div>
+                            <div class="md:col-span-3">
+                                <input type="email" id="input-email" disabled 
+                                    class="w-full bg-transparent border border-transparent text-white font-medium p-2 rounded-lg transition-all focus:outline-none disabled:opacity-90 disabled:cursor-default">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center group/row">
+                            <div class="text-slate-400 font-medium text-sm">Senha</div>
+                            <div class="md:col-span-3">
+                                <input type="password" id="input-senha" disabled 
+                                    class="w-full bg-transparent border border-transparent text-white font-medium p-2 rounded-lg transition-all focus:outline-none disabled:opacity-90 disabled:cursor-default">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="action-buttons" class="flex justify-end gap-4 hidden opacity-0 transition-opacity duration-300">
+                    <button id="btn-cancelar" class="px-6 py-2.5 rounded-xl text-slate-300 font-medium hover:text-white hover:bg-white/5 border border-transparent transition-colors">
+                        Cancelar
+                    </button>
+                    <button id="btn-salvar" class="px-6 py-2.5 rounded-xl bg-vectra-light text-[#0B1120] font-bold hover:bg-blue-400 hover:shadow-[0_0_15px_#4FA3FF] transition-all duration-300">
+                        Salvar Alterações
+                    </button>
+                </div>
+
+            </section>
+        </main>
+    </div> 
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Sidebar
+            const menuBtn = document.getElementById('menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarTexts = document.querySelectorAll('.sidebar-text');
+            
+            let isCollapsed = false;
+            if (menuBtn && sidebar) {
+                menuBtn.addEventListener('click', () => {
+                    isCollapsed = !isCollapsed;
+                    if (isCollapsed) {
+                        sidebar.classList.add('is-collapsed');
+                        gsap.to(sidebarTexts, { 
+                            opacity: 0, x: -10, duration: 0.2, stagger: 0.02, ease: "power1.inOut", 
+                            onComplete: () => sidebarTexts.forEach(t => t.style.display = 'none') 
+                        });
+                        gsap.to(sidebar, { width: "80px", duration: 0.4, ease: "power2.inOut", delay: 0.1 });
+                    } else {
+                        sidebar.classList.remove('is-collapsed');
+                        sidebarTexts.forEach(t => t.style.display = '');
+                        gsap.to(sidebar, { width: "16rem", duration: 0.4, ease: "power2.inOut" });
+                        gsap.to(sidebarTexts, { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power2.out", delay: 0.2 });
+                    }
+                });
+            }
+
+            // Elements
+            const btnEdit = document.getElementById('btn-edit');
+            const btnCancelar = document.getElementById('btn-cancelar');
+            const btnSalvar = document.getElementById('btn-salvar');
+            const actionButtons = document.getElementById('action-buttons');
+            const formInputs = document.querySelectorAll('#user-info-form input');
+            let valoresOriginais = {};
+
+            function toggleEditMode(editing) {
+                formInputs.forEach(input => {
+                    if (editing) {
+                        valoresOriginais[input.id] = input.value;
+                        input.disabled = false;
+                        input.classList.remove('border-transparent', 'bg-transparent');
+                        input.classList.add('border-white/20', 'bg-[#0B1120]');
+                    } else {
+                        input.disabled = true;
+                        input.classList.add('border-transparent', 'bg-transparent');
+                        input.classList.remove('border-white/20', 'bg-[#0B1120]');
+                    }
+                });
+                
+                if (editing) {
+                    actionButtons.classList.remove('hidden', 'opacity-0');
+                    btnEdit.style.display = 'none';
+                } else {
+                    actionButtons.classList.add('opacity-0');
+                    setTimeout(() => {
+                        actionButtons.classList.add('hidden');
+                        btnEdit.style.display = 'flex';
+                    }, 300);
+                }
+            }
+
+            btnEdit?.addEventListener('click', () => toggleEditMode(true));
+            
+            btnCancelar?.addEventListener('click', () => {
+                Object.keys(valoresOriginais).forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input) input.value = valoresOriginais[id];
+                });
+                toggleEditMode(false);
+            });
+
+            btnSalvar?.addEventListener('click', async () => {
+                const originalContent = btnSalvar.innerHTML;
+                btnSalvar.innerHTML = '<i class="ph ph-spinner animate-spin mr-2 text-sm"></i>Salvando...';
+                btnSalvar.disabled = true;
+
+                try {
+                    const storedUser = JSON.parse(localStorage.getItem('vectraUser') || '{}'); 
+                    
+                    if (!storedUser.nome_completo) { 
+                        showToast('Faça login primeiro'); 
+                        return; 
+                    }
+
+                    const userData = {
+                        nome_completo: document.getElementById('input-nome').value,
+                        email: document.getElementById('input-email').value,
+                        senha: document.getElementById('input-senha').value
+                    };
+
+                    const response = await fetch(`/api/users/${storedUser.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+
+                    if (response.ok) {
+                        showToast('Perfil atualizado com sucesso!');
+                        toggleEditMode(false);
+                        // Update avatar
+                        document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.nome_completo)}&background=1E3A5F&color=fff&t=${Date.now()}`;
+                    } else {
+                        showToast('Erro ao salvar no servidor', 'error');
+                    }
+                } catch (error) {
+                    showToast('Erro de conexão: ' + error.message, 'error');
+                } finally {
+                    btnSalvar.innerHTML = originalContent;
+                    btnSalvar.disabled = false;
+                }
+            });
+
+            function showToast(message, type = 'success') {
+                const existingToast = document.getElementById('vectra-toast');
+                if (existingToast) existingToast.remove();
+
+                const toast = document.createElement('div');
+                toast.id = 'vectra-toast';
+                toast.className = 'fixed top-4 right-4 z-[10000] p-4 rounded-xl shadow-2xl border max-w-md font-medium flex items-center gap-2 ' +
+                    (type === 'success' ? 'bg-green-500/20 backdrop-blur border-green-400/50 text-green-100' : 'bg-red-500/20 backdrop-blur border-red-400/50 text-red-100');
+                toast.innerHTML = '<i class="ph ph-' + (type === 'success' ? 'check-circle' : 'x-circle') + ' text-lg flex-shrink-0"></i><span>' + message + '</span>';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 4000);
+            }
+
+            // Load user data on page load
+            try {
+                const storedUser = JSON.parse(localStorage.getItem('vectraUser') || '{}');
+                
+                if (storedUser.nome_completo) {
+                    const response = await fetch(`/api/users/${storedUser.id}`);
+                    if (response.ok) {
+                        const user = await response.json();
+                        document.getElementById('input-nome').value = user.nome_completo || user.name || '';
+                        document.getElementById('input-email').value = user.email || '';
+                        document.getElementById('input-senha').value = '••••••••';
+                        
+                        document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome_completo || user.name || 'Usuário')}&background=1E3A5F&color=fff`;
+                        
+                        valoresOriginais = {
+                            'input-nome': document.getElementById('input-nome').value,
+                            'input-email': document.getElementById('input-email').value,
+                            'input-senha': '••••••••'
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error('Erro carregando perfil:', error);
+                showToast('Não foi possível carregar o perfil', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

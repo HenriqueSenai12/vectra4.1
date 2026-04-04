@@ -1,0 +1,20 @@
+{
+  "name": "vectra-root",
+  "version": "1.0.0",
+  "description": "Vectra App with Node.js + XAMPP integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mysql2": "^3.11.0",
+    "node-ssh": "^13.2.1",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

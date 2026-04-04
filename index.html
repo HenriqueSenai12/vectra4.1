@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vectra - Automação Inteligente para Logística</title>
+  <meta name="description" content="Soluções inteligentes para gestão de estoque, automação industrial e distribuição eficiente.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  
+  
+  <script src="https://unpkg.com/lucide@0.292.0"></script>
+
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="navbar-container">
+    <nav id="navbar" class="navbar">
+      <div class="navbar-content">
+        
+        <div class="navbar-left">
+          <a href="#home" class="logo">
+            <div class="logo-v-container">
+              <img src="image/logo_2.png" alt="Ícone Vectra" class="logo-v-image">
+            </div>
+            <span class="logo-text">Vectra</span>
+          </a>
+        </div>
+        
+        <div class="navbar-center desktop-only">
+          <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#sobre">Sobre</a></li>
+            <li><a href="#objetivo">Objetivo</a></li>
+            <li><a href="#funcionalidades">Funcionalidades</a></li>
+            <li><a href="#contato">Contato</a></li>
+          </ul>
+        </div>
+        
+        <div class="navbar-right">
+          <div class="nav-actions">
+            <a href="frontend/login.html" class="nav-login desktop-only">Log in</a>
+             <a href="frontend/Cadastro.html" class="btn-nav-signup">Sign up</a>
+          </div>
+          
+          <button id="mobile-menu-btn" class="mobile-menu-btn mobile-only" aria-label="Menu">
+            <i data-lucide="menu" id="menu-icon"></i>
+          </button>
+        </div>
+        
+      </div>
+    </nav>
+  </div>
+
+  <div id="mobile-menu" class="mobile-menu">
+    <div class="mobile-menu-content">
+      <a href="#home" class="mobile-link"><i data-lucide="home"></i> Home</a>
+      <a href="#sobre" class="mobile-link"><i data-lucide="info"></i> Sobre</a>
+      <a href="#objetivo" class="mobile-link"><i data-lucide="target"></i> Objetivo</a>
+      <a href="#funcionalidades" class="mobile-link"><i data-lucide="grid"></i> Funcionalidades</a>
+      <a href="#contato" class="mobile-link"><i data-lucide="message-square"></i> Contato</a>
+      
+      <a href="frontend/login.html" class="mobile-link" style="margin-top: 1rem;"><i data-lucide="log-in"></i> Log in</a>
+      
+      <div class="mobile-menu-footer">
+        <a href="#" aria-label="GitHub"><i data-lucide="github"></i></a>
+        <a href="#" aria-label="LinkedIn"><i data-lucide="linkedin"></i></a>
+        <a href="#" aria-label="Twitter"><i data-lucide="twitter"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <section id="home" class="hero">
+    <div class="hero-gradient-base"></div>
+    <div class="hero-gradient-layer hero-gradient-1"></div>
+    <div class="hero-gradient-layer hero-gradient-2"></div>
+    
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 id="hero-title" class="hero-title">
+          <span class="hero-word">Automação</span>
+          <span class="hero-word hero-gradient-text hero-gradient-text-blue">Inteligente</span>
+          <br>
+          <span class="hero-word">para o</span>
+          <span class="hero-word">Futuro</span>
+          <span class="hero-word">da</span>
+          <span class="hero-word hero-gradient-text hero-gradient-text-purple">Logística</span>
+        </h1>
+        <p id="hero-subtitle" class="hero-subtitle">
+          Soluções eficientes para gestão de estoque, automação industrial e
+          distribuição. Transforme sua operação com nossa tecnologia.
+        </p>
+        <div id="hero-buttons" class="hero-buttons">
+          <a href="#sobre" class="btn btn-primary btn-lg hero-button-primary">
+            Conhecer o projeto
+            <i data-lucide="arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sobre" class="section about-section">
+    <div class="container">
+      
+       <div class="brand-story-container">
+      <div class="section-header">
+        <span class="section-badge">Nossa Trajetória</span>
+        <h2 class="section-title-center">A História da Marca</h2>
+      </div>
+      
+      <div class="brand-story-text">
+        <p>
+          A <strong>VECTRA</strong> nasceu da ideia de criar uma solução tecnológica capaz de tornar o trabalho logístico mais eficiente e seguro. Desenvolvida como uma garra robótica, seu objetivo é facilitar a movimentação e organização de cargas em armazéns e centros de distribuição.
+        </p>
+        <p>
+          O nome tem origem no conceito de <strong>"vetor"</strong>, simbolizando direção e movimento contínuo. Sua identidade visual foi desenvolvida a partir da letra <strong>"V"</strong>, formada por linhas paralelas em degradê azul, que transmitem progresso, modernidade e conexão.
+        </p>
+        <p>
+          A cor azul foi escolhida para reforçar valores como tecnologia, segurança e credibilidade. Desde sua criação, a VECTRA posiciona-se como uma marca voltada ao futuro, comprometida com eficiência e transformação tecnológica.
+        </p>
+      </div>
+    </div>
+
+    <div class="spacer-desktop" style="height: 80px;"></div>
+      
+      <div class="about-grid">
+        <div class="about-image-container">
+          <div class="about-image-wrapper">
+            <img 
+              src="image/centro_logistico.png" 
+              alt="Centro logístico com pallets"
+              class="about-image"
+            >
+          </div>
+          <div class="about-stat-card about-stat-main">
+            <span class="stat-value">automação</span>
+            <span class="stat-label"> contínua</span>
+          </div>
+        </div>
+
+        <div class="about-content">
+          <span class="section-badge about-badge">Nossa Solução</span>
+          <h2 class="section-title">Sistema inteligente de manipulação de paletes</h2>
+          
+          <p class="about-text">
+            O coração da nossa tecnologia é a integração de um <strong>módulo de garfos de elevação com um sistema de deslocamento linear</strong>. Ele opera de forma semelhante a uma empilhadeira, porém com precisão milimétrica, autonomia e total controle.
+          </p>
+          
+          <p class="about-text-secondary">
+            Integrado a esteiras e <strong>mecanismos suspensos acoplados ao teto</strong>, todo o conjunto é gerenciado por um sistema de controle avançado. Essa arquitetura otimiza o fluxo e a demanda de ponta a ponta. A operação passa a ser focada na supervisão humana, <strong>reduzindo drasticamente a intervenção manual em áreas de risco</strong> — o que é essencial para a movimentação segura de produtos frágeis e para a eliminação de acidentes.
+          </p>
+
+          <div class="about-features">
+            <div class="about-feature">
+              <div class="feature-icon-wrapper"><i data-lucide="layers"></i></div>
+              <h4>Fluxo Otimizado</h4>
+              <p>Mecanismos de teto e esteiras sincronizadas para atender a qualquer demanda.</p>
+            </div>
+            <div class="about-feature">
+              <div class="feature-icon-wrapper"><i data-lucide="crosshair"></i></div>
+              <h4>Controle e Precisão</h4>
+              <p>Movimentação exata e facilitada, gerida por um sistema inteligente.</p>
+            </div>
+            <div class="about-feature">
+              <div class="feature-icon-wrapper"><i data-lucide="eye"></i></div>
+              <h4>Supervisão Humana</h4>
+              <p>O foco muda do esforço braçal para o gerenciamento estratégico.</p>
+            </div>
+            <div class="about-feature">
+              <div class="feature-icon-wrapper"><i data-lucide="shield-alert"></i></div>
+              <h4>Segurança Máxima</h4>
+              <p>Proteção para produtos frágeis e isolamento humano de zonas perigosas.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="objetivo" class="section objectives-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">Nossos objetivos</span>
+        <h2 class="section-title-center">Metas que impulsionam a inovação</h2>
+        <p class="section-description">
+          Cada objetivo foi definido para trazer resultados concretos e transformar a maneira como as empresas gerenciam suas operações.
+        </p>
+      </div>
+      <div class="objectives-grid">
+        <div class="objective-card">
+          <div class="objective-icon"><i data-lucide="factory"></i></div>
+          <h3 class="objective-title">Automação industrial</h3>
+          <p class="objective-description">Implementação de sistemas robóticos e automatizados para otimizar processos.</p>
+        </div>
+        <div class="objective-card">
+          <div class="objective-icon"><i data-lucide="package"></i></div>
+          <h3 class="objective-title">Controle de estoque</h3>
+          <p class="objective-description">Gestão estruturada de inventário com rastreamento contínuo e previsão de demanda.</p>
+        </div>
+        <div class="objective-card">
+          <div class="objective-icon"><i data-lucide="route"></i></div>
+          <h3 class="objective-title">Otimização logística</h3>
+          <p class="objective-description">Roteirização programada e distribuição eficiente para reduzir custos.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="funcionalidades" class="section features-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">Funcionalidades</span>
+        <h2 class="section-title-center">Recursos poderosos para sua operação</h2>
+        <p class="section-description">
+          Descubra todas as ferramentas que vão transformar a gestão logística da sua empresa.
+        </p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon-wrapper"><i data-lucide="monitor"></i></div>
+          <h3 class="feature-card-title">Monitoramento em tempo real</h3>
+          <p class="feature-card-description">Acompanhe todas as operações através de dashboards intuitivos.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon-wrapper"><i data-lucide="bar-chart-3"></i></div>
+          <h3 class="feature-card-title">Relatórios detalhados</h3>
+          <p class="feature-card-description">Gere relatórios completos com métricas consolidadas para performance.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon-wrapper"><i data-lucide="truck"></i></div>
+          <h3 class="feature-card-title">Automação logística</h3>
+          <p class="feature-card-description">Automatize processos de recebimento, separação e expedição.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon-wrapper"><i data-lucide="users"></i></div>
+          <h3 class="feature-card-title">Gestão de equipes</h3>
+          <p class="feature-card-description">Coordene sua equipe com atribuição de tarefas e acompanhamento.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contato" class="section contact-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">Contato</span>
+        <h2 class="section-title-center">Vamos conversar?</h2>
+        <p class="section-description">
+          Entre em contato para saber como podemos ajudar sua empresa a alcançar novos patamares.
+        </p>
+      </div>
+      <div class="contact-grid">
+        <form class="contact-form">
+          <div class="form-group">
+            <label for="name">Nome completo</label>
+            <input type="text" id="name" placeholder="Seu nome" required>
+          </div>
+          <div class="form-group">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" placeholder="seu@email.com" required>
+          </div>
+          <div class="form-group">
+            <label for="subject">Assunto</label>
+            <input type="text" id="subject" placeholder="Assunto da mensagem" required>
+          </div>
+          <div class="form-group">
+            <label for="message">Mensagem</label>
+            <textarea id="message" placeholder="Escreva sua mensagem..." rows="5" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full">
+            <i data-lucide="send"></i> Enviar mensagem
+          </button>
+        </form>
+        </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        
+        <div class="footer-brand">
+          <a href="#home" class="logo">
+            <div class="logo-v-container logo-v-container-lg">
+              <img src="image/logo_2.png" alt="Ícone Vectra" class="logo-v-image">
+            </div>
+            <span class="logo-text logo-text-lg">Vectra</span>
+          </a>
+          <p class="footer-description">
+            Transformando a logística com soluções de automação e tecnologia.
+          </p>
+          <div class="footer-social">
+            <a href="#" aria-label="GitHub"><i data-lucide="github"></i></a>
+            <a href="#" aria-label="LinkedIn"><i data-lucide="linkedin"></i></a>
+            <a href="#" aria-label="Twitter"><i data-lucide="twitter"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-links-group">
+          <h3>Produto</h3>
+          <ul>
+            <li><a href="#funcionalidades">Funcionalidades</a></li>
+            <li><a href="#">Preços</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-group">
+          <h3>Empresa</h3>
+          <ul>
+            <li><a href="#sobre">Sobre nós</a></li>
+            <li><a href="#">Carreiras</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-group">
+          <h3>Suporte</h3>
+          <ul>
+            <li><a href="#">Central de ajuda</a></li>
+            <li><a href="#contato">Contato</a></li>
+          </ul>
+        </div>
+
+        <div class="contact-info">
+          <div class="contact-item">
+            <div class="contact-icon">
+              <i data-lucide="mail"></i>
+            </div>
+            <div class="contact-info-group">
+              <h3>E-mail</h3>
+              <p>contato@vectra.com.br</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">
+              <i data-lucide="phone"></i>
+            </div>
+            <div class="contact-info-group">
+              <h3>Telefone</h3>
+              <p>+55 (11) 99999-9999</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">
+              <i data-lucide="map-pin"></i>
+            </div>
+            <div class="contact-info-group">
+              <h3>Endereço</h3>
+              <p>São Paulo, SP - Brasil</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      
+      <div class="footer-bottom">
+        <p>2026 Vectra. Todos os direitos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="backend/scripts.js"></script>
+   
+
+
+</body>
+</html>
