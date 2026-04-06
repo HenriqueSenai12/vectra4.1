@@ -292,14 +292,14 @@
                         const user = await response.json();
                         document.getElementById('input-nome').value = user.nome_completo || user.name || '';
                         document.getElementById('input-email').value = user.email || '';
-                        document.getElementById('input-senha').value = '••••••••';
+                         document.getElementById('input-senha').value = user.senha || '';
                         
                         document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome_completo || user.name || 'Usuário')}&background=1E3A5F&color=fff`;
                         
                         valoresOriginais = {
                             'input-nome': document.getElementById('input-nome').value,
                             'input-email': document.getElementById('input-email').value,
-                            'input-senha': '••••••••'
+                            'input-senha': document.getElementById('input-senha').value,
                         };
                     }
                 }
@@ -310,5 +310,6 @@
         });
     </script>
     <script src="../../backend/painel.js"></script>
+    
 </body>
 </html>

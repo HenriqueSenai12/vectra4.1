@@ -1,4 +1,32 @@
 document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. Puxa a quantidade de manutenções salvas no formulário
+    let totalManutencao = parseInt(localStorage.getItem('count_manutencao') || '0');
+    
+    // (Opcional) Puxar outras categorias se você quiser colocar no gráfico depois
+    // let totalInstalacao = parseInt(localStorage.getItem('count_instalacao') || '0');
+
+    console.log("Total de manutenções para o gráfico: ", totalManutencao);
+
+    // 2. Aqui você configura o seu gráfico usando a variável totalManutencao
+    // Exemplo fictício se você usar Chart.js:
+    /*
+    const ctx = document.getElementById('meuGraficoDeRosca').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Manutenção', 'Outros'],
+            datasets: [{
+                data: [totalManutencao, 5], // <--- A variável entra aqui!
+                backgroundColor: ['#4FA3FF', '#152036']
+            }]
+        }
+    });
+    */
+});
+
+
+document.addEventListener('DOMContentLoaded', () => {
     // 1. CARREGAR DADOS E VERIFICAR LOGIN
     const storedUser = JSON.parse(localStorage.getItem('vectraUser'));
 

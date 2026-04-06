@@ -172,7 +172,112 @@ app.post('/api/esteira/stop', async (req, res) => {
   }
 });
 
+const multer = require('multer');
 
+// Configuração do Multer para salvar os arquivos na pasta 'uploads'
+const upload = multer({ dest: 'uploads/' }); 
+
+// Criando a rota que o front-end está chamando
+app.post('/api/publicacoes', upload.single('arquivo'), async (req, res) => {
+  // Dados de texto (titulo, categoria, descricao, usuario_id) vêm no req.body
+  const { titulo, categoria, descricao, usuario_id } = req.body;
+  
+  // O arquivo (imagem/pdf) vem no req.file
+  const arquivo = req.file; 
+
+  let connection;
+  try {
+    connection = await mysql.createConnection(dbConfig);
+    
+    // Pegando o caminho do arquivo (se ele foi enviado)
+    const caminhoArquivo = arquivo ? arquivo.path : null;
+
+    const [result] = await connection.execute(
+      'INSERT INTO publicacoes (titulo, categoria, descricao, usuario_id, caminho_arquivo) VALUES (?, ?, ?, ?, ?)',
+      [titulo, categoria, descricao, usuario_id, caminhoArquivo]
+    );
+
+    res.json({ success: true, message: 'Publicação salva com sucesso!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao salvar publicação' });
+  } finally {
+    if (connection) connection.end();
+  }
+});
+
+// =================================================================
+// ROTA DE MONITORAMENTO (Conexão com o painel front-end)
+// =================================================================
+// =================================================================
+// ROTA DE MONITORAMENTO (Buscando dados REAIS do banco)
+// =================================================================
+app.get('/api/monitoramento', async (req, res) => {
+  let connection;
+  
+  try {
+    connection = await mysql.createConnection(dbConfig);
+
+    // 1. Busca as métricas dos últimos 7 dias (Para os gráficos de Linha e Barra)
+    const [metricas] = await connection.execute(
+      'SELECT inicializacoes_count, paradas_emergencia_count, tempo_operando_minutos, tempo_manutencao_minutos FROM metricas_diarias ORDER BY data_registro ASC LIMIT 7'
+    );
+
+    // Separa os dados em arrays para o ApexCharts
+    const arrayIni = metricas.map(m => m.inicializacoes_count);
+    const arrayPe = metricas.map(m => m.paradas_emergencia_count);
+
+    // 2. Calcula os totais para o Gráfico de Rosca (Donut)
+    const totalOperando = metricas.reduce((acc, curr) => acc + Number(curr.tempo_operando_minutos), 0);
+    const totalManutencao = metricas.reduce((acc, curr) => acc + Number(curr.tempo_manutencao_minutos), 0);
+    const totalParadas = metricas.reduce((acc, curr) => acc + Number(curr.paradas_emergencia_count), 0);
+
+    // 3. Busca o status atual do Equipamento (Cards Superiores)
+    const [equipamento] = await connection.execute(
+      'SELECT status_atual, ultima_inicializacao, uptime_minutos, paradas_emergencia_count FROM equipamentos WHERE id = 1'
+    );
+    const eq = equipamento[0] || {};
+    
+    // Formata o uptime de minutos para "Xh Ym"
+    const horasUptime = Math.floor((eq.uptime_minutos || 0) / 60);
+    const minutosUptime = (eq.uptime_minutos || 0) % 60;
+
+    // 4. Busca os Logs Recentes (Tabela Inferior)
+    const [logs] = await connection.execute(
+      'SELECT tipo_evento, DATE_FORMAT(data_inicio, "%d/%m/%Y") as data_formatada, DATE_FORMAT(data_inicio, "%H:%i") as hora_inicio, DATE_FORMAT(data_fim, "%H:%i") as hora_fim, duracao_minutos FROM logs_operacao ORDER BY data_inicio DESC LIMIT 5'
+    );
+
+    const logsFormatados = logs.map(log => ({
+      data: log.data_formatada,
+      inicio: log.hora_inicio,
+      fim: log.hora_fim || '--:--',
+      tempo: log.duracao_minutos ? `${Math.floor(log.duracao_minutos / 60)}h ${log.duracao_minutos % 60}m` : '--',
+      // Consideramos "normal" se não for parada de emergência
+      isNormal: log.tipo_evento !== 'parada_emergencia' 
+    }));
+
+    // 5. Monta o pacote JSON final e envia para o Front-end
+    res.json({
+        graficoLinha: { ini: arrayIni, pe: arrayPe },
+        graficoBarra: { ini: arrayIni, pe: arrayPe },
+        graficoBarraHoriz: { ini: arrayIni, pe: arrayPe },
+        graficoRosca: [totalOperando, totalManutencao, totalParadas],
+        status: {
+            isOnline: eq.status_atual === 'online',
+            emergencyStops: eq.paradas_emergencia_count || 0,
+            uptime: `${horasUptime}h ${minutosUptime}m`,
+            lastBoot: eq.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '--'
+        },
+        logsTabela: logsFormatados
+    });
+
+  } catch (err) {
+    console.error("Erro na rota de monitoramento:", err);
+    res.status(500).json({ error: 'Erro ao buscar dados do monitoramento no banco de dados' });
+  } finally {
+    if (connection) connection.end();
+  }
+});
 
 
 app.listen(PORT, () => {

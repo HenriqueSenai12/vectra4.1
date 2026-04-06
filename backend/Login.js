@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (userRole === 'admin') {
             window.location.href = './tela_admin/painel_principal.html';
           } else if (userRole === 'operador') {
-            window.location.href = './tela_operador/painel_operador.html';
+            window.location.href = './tela_operador/painel_principal.html';
           } else {
             window.location.href = './tela_principal/painel_principal.html';
           }

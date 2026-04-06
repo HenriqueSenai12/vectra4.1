@@ -1,5 +1,5 @@
 // ==========================================================================
-//   SCRIPT PRINCIPAL DO FORMULÁRIO E UPLOAD (UNIFICADO)
+//   SCRIPT PRINCIPAL DO FORMULÁRIO E UPLOAD (CONECTADO COM BANCO)
 // ==========================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('drop-zone');
     const btnUpload = document.getElementById('btn-upload');
     const fileInput = document.getElementById('file-input');
-    const uploadInfo = document.getElementById('upload-info'); // Unifiquei textInfo e uploadInfo
+    const uploadInfo = document.getElementById('upload-info'); 
     const imagePreview = document.getElementById('image-preview');
 
     // Elementos do Formulário
@@ -83,13 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // ==========================================
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault(); 
-            // Adiciona destaque visual combinando suas duas ideias originais
             dropZone.classList.add('drag-active', 'border-vectra-light', 'bg-[#152036]'); 
         });
 
         dropZone.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            // Remove destaque visual
             dropZone.classList.remove('drag-active', 'border-vectra-light', 'bg-[#152036]');
         });
 
@@ -165,23 +163,93 @@ document.addEventListener('DOMContentLoaded', () => {
         btnCancelar.addEventListener('click', (e) => {
             e.preventDefault();
             resetarFormulario();
-            mostrarNotificacao('Ação cancelada. Formulário limpo.', 'erro'); 
+            
+            // Mostra o aviso na tela usando o seu sistema de notificações
+            mostrarNotificacao('Ação cancelada! Retornando ao painel...', 'erro'); 
+            
+            // Aguarda 1.5 segundos para o usuário ler a mensagem, e então redireciona
+            setTimeout(() => {
+                window.location.href = 'tela_principal.html'; 
+            }, 1500);
         });
     }
 
     if (btnSalvar) {
-        btnSalvar.addEventListener('click', (e) => {
+        // Transformamos a função em ASYNC para poder aguardar o envio ao backend
+        btnSalvar.addEventListener('click', async (e) => {
             e.preventDefault();
 
-            const tituloPreenchido = inputTitulo && inputTitulo.value.trim() !== '';
-            const descricaoPreenchida = textareaDescricao && textareaDescricao.value.trim() !== '';
-            const categoriaPreenchida = selectCategoria && selectCategoria.value !== 'Sem categoria' && selectCategoria.value !== '';
+            // Captura de valores atuais
+            const tituloVal = inputTitulo ? inputTitulo.value.trim() : '';
+            const descricaoVal = textareaDescricao ? textareaDescricao.value.trim() : '';
+            const categoriaVal = selectCategoria ? selectCategoria.value : '';
+
+            const tituloPreenchido = tituloVal !== '';
+            const categoriaPreenchida = categoriaVal !== 'Sem categoria' && categoriaVal !== '';
             
-            if (tituloPreenchido && descricaoPreenchida && categoriaPreenchida) {
-                resetarFormulario(); 
-                mostrarNotificacao('Publicação salva com sucesso!', 'sucesso'); 
+            // Exigindo apenas Título e Categoria. A imagem é opcional.
+            if (tituloPreenchido && categoriaPreenchida) {
+                
+                // 1. Feedback visual de carregamento no botão
+                const textoOriginalBotao = btnSalvar.innerHTML;
+                btnSalvar.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Salvando...`;
+                btnSalvar.disabled = true;
+
+                // 2. Criar pacote de dados (FormData)
+                const formData = new FormData();
+                formData.append('titulo', tituloVal);
+                formData.append('categoria', categoriaVal);
+                formData.append('descricao', descricaoVal);
+                
+                // Adicione o ID do usuário que está logado (Aqui usamos 1 como exemplo)
+                formData.append('usuario_id', 1); 
+
+                // Se houver um arquivo anexado, adiciona no pacote. Se não houver, o fetch continua normalmente.
+                if (fileInput && fileInput.files.length > 0) {
+                    formData.append('arquivo', fileInput.files[0]);
+                }
+
+                // 3. Enviar para a sua API Back-end
+               // ... código anterior de preparar os dados ...
+try {
+    const response = await fetch('http://localhost:3300/api/publicacoes', {
+        method: 'POST',
+        body: formData
+    });
+
+    // 👇 VOCÊ VAI SUBSTITUIR ESTA PARTE 👇
+    if (response.ok) {
+        // --- INÍCIO DO REGISTRO PARA O GRÁFICO (PROTÓTIPO) ---
+        // Verifica se a categoria escolhida foi manutenção
+        if (categoriaVal === 'manutencao' || categoriaVal === 'Manutenção') {
+            let qtdManutencao = parseInt(localStorage.getItem('count_manutencao') || '0');
+            localStorage.setItem('count_manutencao', qtdManutencao + 1);
+        }
+        // --- FIM DO REGISTRO ---
+
+        resetarFormulario(); 
+        mostrarNotificacao('Salvo! Retornando ao painel...', 'sucesso'); 
+        
+        setTimeout(() => {
+            window.location.href = 'painel_principal.html'; 
+        }, 1500);
+    } else {
+        mostrarNotificacao('Erro ao salvar no servidor.', 'erro'); 
+    }
+    // 👆 ATÉ AQUI 👆
+
+} catch (error) {
+// ... resto do código ...                } catch (error) {
+                    console.error('Erro na conexão:', error);
+                    mostrarNotificacao('Erro de rede: Não foi possível conectar ao servidor.', 'erro');
+                } finally {
+                    // 4. Restaura o botão ao normal
+                    btnSalvar.innerHTML = textoOriginalBotao;
+                    btnSalvar.disabled = false;
+                }
+
             } else {
-                mostrarNotificacao('Por favor, preencha todos os campos obrigatórios.', 'erro'); 
+                mostrarNotificacao('Por favor, preencha todos os campos obrigatórios (Título e Categoria).', 'erro'); 
             }
         });
     }
