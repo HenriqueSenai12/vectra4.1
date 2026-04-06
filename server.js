@@ -40,6 +40,29 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+// Rota para buscar os dados de um ÚNICO usuário logado
+app.get('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  let connection;
+  try {
+    connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute('SELECT id, nome_completo, email, funcao, senha FROM usuarios WHERE id = ?', [id]);
+    
+    if (rows.length === 0) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+    
+    // Retorna apenas o objeto do usuário (o primeiro item do array)
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'DB error' });
+  } finally {
+    if (connection) connection.end();
+  }
+});
+
+
 
 app.post('/api/users', async (req, res) => {
   const {nome_completo, email, funcao, senha} = req.body;
@@ -61,14 +84,33 @@ app.post('/api/users', async (req, res) => {
 
 app.put('/api/users/:id', async (req, res) => {
   const { id } = req.params;
-  const { nome_completo, funcao, senha } = req.body;
+  // Retiramos a 'funcao' daqui, pois ela não deve ser alterada pelo próprio usuário
+  const { nome_completo, senha } = req.body; 
   let connection;
+  
   try {
     connection = await mysql.createConnection(dbConfig);
-    const query = 'UPDATE usuarios SET nome_completo = ?, funcao = ?' + (senha ? ', senha = ?' : '') + ' WHERE id = ?';
-    const params = senha ? [nome_completo, funcao, senha, id] : [nome_completo, funcao, id];
+    
+    // Monta a query dinamicamente
+    let query = 'UPDATE usuarios SET nome_completo = ?';
+    let params = [nome_completo];
+
+    // Se a senha foi enviada pelo front-end, adiciona ela na atualização
+    if (senha) {
+      query += ', senha = ?';
+      params.push(senha);
+    }
+
+    // Finaliza a query com o ID
+    query += ' WHERE id = ?';
+    params.push(id);
+
     const [result] = await connection.execute(query, params);
-    if (result.affectedRows === 0) return res.status(404).json({error: 'Usuário não encontrado'});
+    
+    if (result.affectedRows === 0) {
+        return res.status(404).json({error: 'Usuário não encontrado'});
+    }
+    
     res.json({success: true});
   } catch (err) {
     console.error(err);
@@ -77,6 +119,7 @@ app.put('/api/users/:id', async (req, res) => {
     if (connection) connection.end();
   }
 });
+
 
 app.delete('/api/users/:id', async (req, res) => {
   const { id } = req.params;
