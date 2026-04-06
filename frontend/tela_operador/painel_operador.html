@@ -141,29 +141,88 @@
         </main>
 
     <script src="../../backend/scripts.js"></script>
-<script>const menuBtn = document.getElementById('menu-btn');
-const sidebar = document.getElementById('sidebar');
-const sidebarTexts = document.querySelectorAll('.sidebar-text');
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // =====================================================================
+    // 1. CARREGAR DADOS DO USUÁRIO LOGADO
+    // =====================================================================
+    const storedUser = JSON.parse(localStorage.getItem('vectraUser'));
 
-let isCollapsed = false;
-if (menuBtn && sidebar) {
-    menuBtn.addEventListener('click', () => {
-        isCollapsed = !isCollapsed;
-        if (isCollapsed) {
-            sidebar.classList.add('is-collapsed');
-            gsap.to(sidebarTexts, { 
-                opacity: 0, x: -10, duration: 0.2, stagger: 0.02, ease: "power1.inOut", 
-                onComplete: () => sidebarTexts.forEach(t => t.style.display = 'none') 
-            });
-            gsap.to(sidebar, { width: "80px", duration: 0.4, ease: "power2.inOut", delay: 0.1 });
-        } else {
-            sidebar.classList.remove('is-collapsed');
-            sidebarTexts.forEach(t => t.style.display = '');
-            gsap.to(sidebar, { width: "16rem", duration: 0.4, ease: "power2.inOut" });
-            gsap.to(sidebarTexts, { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power2.out", delay: 0.2 });
-        }
-    });
-}</script
+    // Se não tiver ninguém logado, expulsa de volta para o login
+    if (!storedUser || !storedUser.nome_completo) {
+        window.location.href = '../login.html'; // Ajuste o caminho se necessário
+        return; 
+    }
+
+    // =====================================================================
+    // 2. ATUALIZAR SAUDAÇÃO E NOME
+    // =====================================================================
+    const greetingElement = document.querySelector('header h1.text-2xl');
+    if (greetingElement) {
+        // Pega a hora atual para saber se é dia, tarde ou noite
+        const horaAtual = new Date().getHours();
+        let saudacao = 'Bom dia';
+        if (horaAtual >= 12 && horaAtual < 18) saudacao = 'Boa tarde';
+        else if (horaAtual >= 18) saudacao = 'Boa noite';
+
+        // Pega apenas o primeiro nome da pessoa para ficar mais amigável
+        const primeiroNome = storedUser.nome_completo.split(' ')[0];
+        greetingElement.textContent = `${saudacao}, ${primeiroNome}!`;
+    }
+
+    // =====================================================================
+    // 3. ATUALIZAR AVATAR
+    // =====================================================================
+    const userAvatarHeader = document.getElementById('userAvatarHeader');
+    if (userAvatarHeader) {
+        // Gera a imagem baseada no nome da pessoa
+        userAvatarHeader.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(storedUser.nome_completo)}&background=4FA3FF&color=fff&bold=true`;
+        
+        // Coloca o cargo no "title" para aparecer quando passar o mouse
+        const cargoTexto = storedUser.funcao === 'admin' ? 'Administrador' : 'Operador';
+        userAvatarHeader.title = cargoTexto;
+    }
+
+    // =====================================================================
+    // 4. LÓGICA DE LOGOUT (SAIR)
+    // =====================================================================
+    const btnSair = document.querySelector('a[href="../login.html"]'); // Busca pelo link de sair
+    if (btnSair) {
+        btnSair.addEventListener('click', () => {
+            // Limpa a "sessão" do navegador
+            localStorage.removeItem('vectraUser');
+        });
+    }
+
+    // =====================================================================
+    // 5. ANIMAÇÃO DO MENU LATERAL (SEU CÓDIGO ORIGINAL)
+    // =====================================================================
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarTexts = document.querySelectorAll('.sidebar-text');
+
+    let isCollapsed = false;
+    if (menuBtn && sidebar) {
+        menuBtn.addEventListener('click', () => {
+            isCollapsed = !isCollapsed;
+            if (isCollapsed) {
+                sidebar.classList.add('is-collapsed');
+                gsap.to(sidebarTexts, { 
+                    opacity: 0, x: -10, duration: 0.2, stagger: 0.02, ease: "power1.inOut", 
+                    onComplete: () => sidebarTexts.forEach(t => t.style.display = 'none') 
+                });
+                gsap.to(sidebar, { width: "80px", duration: 0.4, ease: "power2.inOut", delay: 0.1 });
+            } else {
+                sidebar.classList.remove('is-collapsed');
+                sidebarTexts.forEach(t => t.style.display = '');
+                gsap.to(sidebar, { width: "16rem", duration: 0.4, ease: "power2.inOut" });
+                gsap.to(sidebarTexts, { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power2.out", delay: 0.2 });
+            }
+        });
+    }
+});
+</script>
+
 
 </body>
 </html>
