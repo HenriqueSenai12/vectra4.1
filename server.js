@@ -160,17 +160,98 @@ app.post('/api/esteira/play', async (req, res) => {
   }
 });
 
-// Rota para PARAR o script
-app.post('/api/esteira/stop', async (req, res) => {
-  try {
-    await ssh.connect(ev3Config);
-    // Mata o processo do python no EV3
-    await ssh.execCommand('pkill -f main.py');
-    res.json({ success: true, message: 'Robô parado' });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao parar robô' });
-  }
+// ==========================================================
+// ROTA PARA INICIAR O ROBÔ (E REGISTRAR NO DASHBOARD)
+// ==========================================================
+// ==========================================================
+// ROTA: LIGAR A MÁQUINA (Registra no Dashboard)
+// ==========================================================
+app.post('/api/esteira/play', async (req, res) => {
+    let connection;
+    try {
+        connection = await mysql.createConnection(dbConfig);
+        
+        // 1. Muda status para 'online' e salva a hora de inicialização
+        await connection.execute(`UPDATE equipamentos SET status_atual = 'online', ultima_inicializacao = NOW() WHERE id = 1`);
+        
+        // 2. Cria o log de atividade na tabela
+        await connection.execute(`INSERT INTO logs_operacao (equipamento_id, tipo_evento, data_inicio, descricao) VALUES (1, 'inicializacao', NOW(), 'Máquina ligada pelo Painel de Controle')`);
+        
+        // 3. Atualiza o Gráfico de Barras (Soma +1 inicialização no dia de hoje)
+        await connection.execute(`
+            INSERT INTO metricas_diarias (equipamento_id, data_registro, inicializacoes_count) 
+            VALUES (1, CURDATE(), 1) 
+            ON DUPLICATE KEY UPDATE inicializacoes_count = inicializacoes_count + 1
+        `);
+
+        res.json({ success: true, message: 'Máquina iniciada no sistema.' });
+    } catch (err) {
+        console.error("Erro no BD (Play):", err);
+        res.status(500).json({ error: 'Erro ao registrar no banco' });
+    } finally {
+        if (connection) connection.end();
+    }
 });
+
+// ==========================================================
+// ROTA: PARAR A MÁQUINA (Calcula Uptime e Registra Parada)
+// ==========================================================
+app.post('/api/esteira/stop', async (req, res) => {
+    let connection;
+    try {
+        connection = await mysql.createConnection(dbConfig);
+        
+        // 1. Calcula quantos minutos a máquina ficou ligada (Uptime)
+        const [rows] = await connection.execute(`SELECT ultima_inicializacao FROM equipamentos WHERE id = 1 AND status_atual = 'online'`);
+        let minutosAtivos = 0;
+        
+        if (rows.length > 0 && rows[0].ultima_inicializacao) {
+            const horaInicio = new Date(rows[0].ultima_inicializacao);
+            const horaAtual = new Date();
+            minutosAtivos = Math.floor((horaAtual - horaInicio) / 1000 / 60); // Diferença em minutos
+        }
+
+        // 2. Muda status para 'offline', soma os minutos de uptime e registra a parada
+        await connection.execute(`
+            UPDATE equipamentos 
+            SET status_atual = 'offline', 
+                uptime_minutos = uptime_minutos + ?, 
+                paradas_emergencia_count = paradas_emergencia_count + 1 
+            WHERE id = 1
+        `, [minutosAtivos]);
+
+        // 3. Cria o log de parada
+        await connection.execute(`INSERT INTO logs_operacao (equipamento_id, tipo_evento, data_inicio, descricao) VALUES (1, 'parada_emergencia', NOW(), 'Máquina desligada pelo Painel de Controle')`);
+        
+        // 4. Atualiza os gráficos de Barras e Uptime diário
+        await connection.execute(`
+            INSERT INTO metricas_diarias (equipamento_id, data_registro, paradas_emergencia_count, tempo_operando_minutos) 
+            VALUES (1, CURDATE(), 1, ?) 
+            ON DUPLICATE KEY UPDATE 
+                paradas_emergencia_count = paradas_emergencia_count + 1,
+                tempo_operando_minutos = tempo_operando_minutos + ?
+        `, [minutosAtivos, minutosAtivos]);
+
+        res.json({ success: true, message: 'Máquina parada no sistema.' });
+    } catch (err) {
+        console.error("Erro no BD (Stop):", err);
+        res.status(500).json({ error: 'Erro ao registrar no banco' });
+    } finally {
+        if (connection) connection.end();
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
 
 const multer = require('multer');
 
@@ -178,40 +259,50 @@ const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); 
 
 // Criando a rota que o front-end está chamando
+// ==========================================================
+// ROTA: SUPORTE (Registra tickets e manutenções)
+// ==========================================================
 app.post('/api/publicacoes', upload.single('arquivo'), async (req, res) => {
-  // Dados de texto (titulo, categoria, descricao, usuario_id) vêm no req.body
-  const { titulo, categoria, descricao, usuario_id } = req.body;
+    const { titulo, categoria, descricao, usuario_id } = req.body;
+    const arquivo = req.file; 
+    let connection;
   
-  // O arquivo (imagem/pdf) vem no req.file
-  const arquivo = req.file; 
-
-  let connection;
-  try {
-    connection = await mysql.createConnection(dbConfig);
-    
-    // Pegando o caminho do arquivo (se ele foi enviado)
-    const caminhoArquivo = arquivo ? arquivo.path : null;
-
-    const [result] = await connection.execute(
-      'INSERT INTO publicacoes (titulo, categoria, descricao, usuario_id, caminho_arquivo) VALUES (?, ?, ?, ?, ?)',
-      [titulo, categoria, descricao, usuario_id, caminhoArquivo]
-    );
-
-    res.json({ success: true, message: 'Publicação salva com sucesso!' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao salvar publicação' });
-  } finally {
-    if (connection) connection.end();
-  }
+    try {
+        connection = await mysql.createConnection(dbConfig);
+        const caminhoArquivo = arquivo ? arquivo.path : null;
+  
+        // 1. Salva o ticket
+        await connection.execute(
+            'INSERT INTO publicacoes (titulo, categoria, descricao, usuario_id, caminho_arquivo) VALUES (?, ?, ?, ?, ?)',
+            [titulo, categoria, descricao, usuario_id || null, caminhoArquivo]
+        );
+  
+        // 2. Se a categoria for manutenção, atualiza os gráficos do Dashboard!
+        if (categoria === 'manutencao' || categoria === 'Manutenção') { 
+            
+            // Log de manutenção na tabela
+            await connection.execute(
+                `INSERT INTO logs_operacao (equipamento_id, usuario_id, tipo_evento, data_inicio, descricao) VALUES (1, ?, 'manutencao', NOW(), ?)`, 
+                [usuario_id || null, `Ticket Suporte: ${titulo}`]
+            );
+            
+            // Adiciona +1 à manutenção do gráfico de pizza
+            await connection.execute(`
+                INSERT INTO metricas_diarias (equipamento_id, data_registro, tempo_manutencao_minutos) 
+                VALUES (1, CURDATE(), 60) 
+                ON DUPLICATE KEY UPDATE tempo_manutencao_minutos = tempo_manutencao_minutos + 60
+            `);
+        }
+  
+        res.json({ success: true, message: 'Publicação registrada!' });
+    } catch (err) {
+        console.error("Erro BD (Suporte):", err);
+        res.status(500).json({ error: 'Erro ao salvar publicação' });
+    } finally {
+        if (connection) connection.end();
+    }
 });
 
-// =================================================================
-// ROTA DE MONITORAMENTO (Conexão com o painel front-end)
-// =================================================================
-// =================================================================
-// ROTA DE MONITORAMENTO (Buscando dados REAIS do banco)
-// =================================================================
 app.get('/api/monitoramento', async (req, res) => {
   let connection;
   
