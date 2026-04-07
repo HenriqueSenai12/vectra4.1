@@ -25,6 +25,8 @@ app.get('/', (req, res) => {
   // Alteramos o caminho para pegar o index.html na mesma pasta do server.js
   res.sendFile(path.join(__dirname, 'index.html'));
 });
+// Serve arquivos estáticos da raiz do projeto (como o styles.css)
+app.use(express.static(__dirname)); 
 
 
 // ==========================================================
