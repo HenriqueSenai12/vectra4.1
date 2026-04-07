@@ -22,8 +22,10 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Rota Principal
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend/login.html'));
+  // Alteramos o caminho para pegar o index.html na mesma pasta do server.js
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
+
 
 // ==========================================================
 // ROTA DE MONITORAMENTO (Para o seu Dashboard mostrar os dados)
