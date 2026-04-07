@@ -1,63 +1,59 @@
-const express = require('express');
+const express = require('express'); // <-- Corrigido para 'const' minúsculo!
 const path = require('path');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
-// Na Vercel, a porta é dinâmica
 const PORT = process.env.PORT || 3300;
 
-// CONFIGURAÇÃO - Use a SECRET KEY (aquela que começa com sb_secret)
+// Configuração do Supabase
 const supabaseUrl = 'https://ncdviiijzbbqugyiusyq.supabase.co';
 const supabaseKey = 'sb_publishable_Lwh8-C2Ah3PLP-riPKtq8w_R4oxJgxC'; 
-
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(cors());
 app.use(express.json());
 
-// Serve os arquivos da pasta frontend
-app.use(express.static(path.join(__dirname, 'frontend')));
+// ==========================================================
+// CONFIGURAÇÃO DOS ARQUIVOS ESTÁTICOS (CSS, IMAGENS, JS)
+// A ordem aqui é muito importante! Tem que vir antes das rotas.
+// ==========================================================
 
-// Rota Principal
-app.get('/', (req, res) => {
-  // Alteramos o caminho para pegar o index.html na mesma pasta do server.js
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-// Serve arquivos estáticos da raiz do projeto (como o styles.css)
+// 1. Libera a pasta 'frontend' (onde estão seus outros CSS e HTMLs)
+// Assim, o HTML vai achar os arquivos em caminhos como "/frontend/tela_admin/dashboard.css"
+app.use('/frontend', express.static(path.join(__dirname, 'frontend')));
+
+// 2. Libera a pasta 'image' (onde estão suas fotos/logos)
+app.use('/image', express.static(path.join(__dirname, 'image')));
+
+// 3. Libera a raiz do projeto (para ele achar o styles.css que está solto)
 app.use(express.static(__dirname)); 
 
 
 // ==========================================================
-// ROTA DE MONITORAMENTO (Para o seu Dashboard mostrar os dados)
+// ROTAS DO SEU SITE
 // ==========================================================
+
+// Rota Principal (Tela Inicial)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Rota de Monitoramento (Para o seu Dashboard mostrar os dados)
 app.get('/api/monitoramento', async (req, res) => {
   try {
-    // Busca dados do Equipamento (id 1)
     const { data: eq, error: err1 } = await supabase
-      .from('equipamentos')
-      .select('*')
-      .eq('id', 1)
-      .single();
+      .from('equipamentos').select('*').eq('id', 1).single();
 
-    // Busca as Métricas Diárias
     const { data: metricas, error: err2 } = await supabase
-      .from('metricas_diarias')
-      .select('*')
-      .order('data_registro', { ascending: true })
-      .limit(7);
+      .from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
 
-    // Busca os logs recentes
     const { data: logs, error: err3 } = await supabase
-      .from('logs_operacao')
-      .select('*')
-      .order('data_inicio', { ascending: false })
-      .limit(5);
+      .from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(5);
 
     if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
 
-    // Formata a resposta para o seu Dashboard (Gráficos e Tabela)
     res.json({
       graficoLinha: { 
         ini: metricas.map(m => m.inicializacoes_count), 
