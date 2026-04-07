@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
             chartLine = new ApexCharts(document.querySelector("#line-chart"), {
                 ...baseOptions,
                 series: [{ name: 'Inicializado', data: [] }, { name: 'Parada de Emergência', data: [] }], 
-                chart: { type: 'line', height: '100%', width: '100%', parentHeightOffset: 0, dropShadow: { enabled: true, color: '#000', top: 10, left: 0, blur: 5, opacity: 0.2 } },
+                chart: { type: 'line', height: '100%', width: '100%', parentHeightOffset: 0, dropShadow: { enabled: true, color: '#000', top: 10, left: 0, blur: 5, opacity: 0.2 }, animations: { enabled: false } }, // Desativa animação para atualização em tempo real mais suave
                 colors: [themeColors.cyan, themeColors.red],
                 stroke: { curve: 'straight', width: 3 },
                 markers: { size: 5, colors: ['#0f172a'], strokeColors: [themeColors.cyan, themeColors.red], strokeWidth: 2, hover: { size: 7 } },
@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 series: [], 
                 labels: ['Operando', 'Manutenção', 'Parada de Emergência'],
                 colors: [themeColors.cyan, themeColors.yellow, themeColors.red],
-                chart: { type: 'donut', height: '100%', width: '100%' },
+                chart: { type: 'donut', height: '100%', width: '100%', animations: { enabled: false } }, // Desativa animação para evitar flicker
                 stroke: { show: true, colors: ['#0f172a'], width: 3 }, 
                 legend: { position: 'bottom', labels: { colors: themeColors.text } },
                 tooltip: { theme: 'dark' }
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
             chartBarHorizontal = new ApexCharts(document.querySelector("#bar-chart-horizontal"), {
                 ...baseOptions,
                 series: [{ name: 'Inicializado (INI)', data: [] }, { name: 'Parada de Emergência (PE)', data: [] }],
-                chart: { type: 'bar', height: '100%', width: '100%', stacked: true, toolbar: { show: false } },
+                chart: { type: 'bar', height: '100%', width: '100%', stacked: true, toolbar: { show: false }, animations: { enabled: false } }, // Desativa animação
                 colors: [themeColors.cyan, themeColors.red],
                 plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '50%', borderRadiusApplication: 'end' } },
                 xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } }, axisBorder: { show: false }, axisTicks: { show: false } },
@@ -107,10 +107,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnAtualizar = document.getElementById('btn-atualizar');
     const iconAtualizar = document.getElementById('icon-atualizar');
 
-    const buscarDadosNoServidor = async () => {
+    // Variável isManualClick adicionada para saber se o usuário apertou o botão ou se foi atualização automática
+    const buscarDadosNoServidor = async (isManualClick = false) => {
         try {
-            // Animando ícone de atualização
-            if(iconAtualizar) gsap.to(iconAtualizar, { rotation: "+=360", duration: 0.8, ease: "power2.inOut" });
+            // Anima o ícone de atualização APENAS se o usuário clicou no botão
+            if(isManualClick && iconAtualizar) {
+                gsap.to(iconAtualizar, { rotation: "+=360", duration: 0.8, ease: "power2.inOut" });
+            }
 
             // 1. Conectando na rota do backend
             const response = await fetch('http://localhost:3300/api/monitoramento');
@@ -133,7 +136,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const statusDots = statusText.parentElement.querySelectorAll('span.rounded-full');
                 statusDots.forEach(dot => {
                     dot.className = `absolute inline-flex h-full w-full rounded-full opacity-50 ${data.status.isOnline ? 'bg-emerald-500' : 'bg-red-500'}`;
-                    // A segunda bolinha não tem animate-ping e opacity
                     if(!dot.classList.contains('absolute')) {
                         dot.className = `relative inline-flex rounded-full h-full w-full ${data.status.isOnline ? 'bg-emerald-500' : 'bg-red-500'}`;
                     }
@@ -169,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>`;
 
                         newRowsHTML += `
-                            <tr class="hover:bg-white/5 transition-colors animate-[fadeIn_0.5s_ease-in-out]">
+                            <tr class="hover:bg-white/5 transition-colors">
                                 <td class="py-4 px-6">${log.data}</td>
                                 <td class="py-4 px-6">${log.inicio}</td>
                                 <td class="py-4 px-6">${log.fim}</td>
@@ -188,11 +190,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Executa a busca de dados ao clicar no botão de atualizar
+    // ==========================================
+    // INICIALIZAÇÃO E AUTO-REFRESH
+    // ==========================================
+
+    // Dispara a primeira busca assim que a tela abre
+    buscarDadosNoServidor(false); 
+
+    // Executa a busca manual ao clicar no botão de atualizar
     if (btnAtualizar) {
-        btnAtualizar.addEventListener('click', buscarDadosNoServidor);
+        btnAtualizar.addEventListener('click', () => buscarDadosNoServidor(true));
     }
 
-    // Dispara a primeira busca de dados assim que a tela abre
-    buscarDadosNoServidor(); 
+    // ⌚ BÔNUS: Atualiza automaticamente os dados a cada 5 segundos!
+    // Assim você consegue ver os SEGUNDOS subindo ao vivo no Uptime.
+    setInterval(() => {
+        buscarDadosNoServidor(false);
+    }, 5000); 
+
 });

@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
-const multer = require('multer'); // Movido aqui para cima por organização
+const multer = require('multer'); 
 
 const app = express();
 const PORT = 3300;
@@ -163,45 +163,67 @@ app.post('/api/esteira/play', async (req, res) => {
 // ==========================================================
 // ROTA: PARAR A MÁQUINA (Calcula Uptime e Registra Parada)
 // ==========================================================
+// ==========================================================
+// ROTA: PARAR A MÁQUINA (Calcula Uptime e Registra Parada)
+// ==========================================================
 app.post('/api/esteira/stop', async (req, res) => {
     let connection;
     try {
         connection = await mysql.createConnection(dbConfig);
         
-        // 1. Calcula quantos minutos a máquina ficou ligada (Uptime)
+        // 1. Calcula os SEGUNDOS que a máquina ficou ligada (Uptime)
         const [rows] = await connection.execute(`SELECT ultima_inicializacao FROM equipamentos WHERE id = 1 AND status_atual = 'online'`);
-        let minutosAtivos = 0;
+        let segundosAtivos = 0;
         
         if (rows.length > 0 && rows[0].ultima_inicializacao) {
             const horaInicio = new Date(rows[0].ultima_inicializacao);
             const horaAtual = new Date();
-            minutosAtivos = Math.floor((horaAtual - horaInicio) / 1000 / 60); 
+            segundosAtivos = Math.floor((horaAtual - horaInicio) / 1000); 
+            
+            // Trava de segurança para evitar cálculos negativos em caso de fuso horário errado do PC
+            if (segundosAtivos < 0) segundosAtivos = 0; 
         }
 
-        // 2. Muda status para 'offline', soma os minutos de uptime e registra a parada
+        // 2. Muda status para 'offline', soma os segundos de uptime
         await connection.execute(`
             UPDATE equipamentos 
             SET status_atual = 'offline', 
-                uptime_minutos = uptime_minutos + ?, 
+                uptime_segundos = uptime_segundos + ?, 
                 paradas_emergencia_count = paradas_emergencia_count + 1 
             WHERE id = 1
-        `, [minutosAtivos]);
+        `, [segundosAtivos]);
 
-        // 3. Cria o log de parada
-        await connection.execute(`INSERT INTO logs_operacao (equipamento_id, tipo_evento, data_inicio, descricao) VALUES (1, 'parada_emergencia', NOW(), 'Máquina desligada pelo Painel de Controle')`);
+        // 3. ATUALIZA O LOG (Dividido em duas etapas para evitar erro de sintaxe do MySQL)
+        // Primeiro busca qual é o ID do log da sessão atual
+        const [openLogs] = await connection.execute(`
+            SELECT id FROM logs_operacao 
+            WHERE equipamento_id = 1 AND data_fim IS NULL 
+            ORDER BY id DESC LIMIT 1
+        `);
+        
+        // Se encontrou um log aberto, atualiza ele
+        if (openLogs.length > 0) {
+            await connection.execute(`
+                UPDATE logs_operacao 
+                SET data_fim = NOW(), 
+                    duracao_segundos = ?
+                WHERE id = ?
+            `, [segundosAtivos, openLogs[0].id]);
+        }
         
         // 4. Atualiza os gráficos de Barras e Uptime diário
         await connection.execute(`
-            INSERT INTO metricas_diarias (equipamento_id, data_registro, paradas_emergencia_count, tempo_operando_minutos) 
+            INSERT INTO metricas_diarias (equipamento_id, data_registro, paradas_emergencia_count, tempo_operando_segundos) 
             VALUES (1, CURDATE(), 1, ?) 
             ON DUPLICATE KEY UPDATE 
                 paradas_emergencia_count = paradas_emergencia_count + 1,
-                tempo_operando_minutos = tempo_operando_minutos + ?
-        `, [minutosAtivos, minutosAtivos]);
+                tempo_operando_segundos = tempo_operando_segundos + ?
+        `, [segundosAtivos, segundosAtivos]);
 
-        res.json({ success: true, message: 'Máquina parada no sistema.' });
+        res.json({ success: true, message: 'Máquina parada e log atualizado.' });
     } catch (err) {
-        console.error("Erro no BD (Stop):", err);
+        // Log melhorado para mostrar exatamente o que deu erro no terminal
+        console.error("🔴 Erro detalhado no BD (Stop):", err.message); 
         res.status(500).json({ error: 'Erro ao registrar no banco' });
     } finally {
         if (connection) connection.end();
@@ -236,10 +258,11 @@ app.post('/api/publicacoes', upload.single('arquivo'), async (req, res) => {
                 [usuario_id || null, `Ticket Suporte: ${titulo}`]
             );
             
+            // 👇 Adiciona 3600 segundos (1 hora) ao gráfico de manutenção
             await connection.execute(`
-                INSERT INTO metricas_diarias (equipamento_id, data_registro, tempo_manutencao_minutos) 
-                VALUES (1, CURDATE(), 60) 
-                ON DUPLICATE KEY UPDATE tempo_manutencao_minutos = tempo_manutencao_minutos + 60
+                INSERT INTO metricas_diarias (equipamento_id, data_registro, tempo_manutencao_segundos) 
+                VALUES (1, CURDATE(), 3600) 
+                ON DUPLICATE KEY UPDATE tempo_manutencao_segundos = tempo_manutencao_segundos + 3600
             `);
         }
   
@@ -262,46 +285,79 @@ app.get('/api/monitoramento', async (req, res) => {
     connection = await mysql.createConnection(dbConfig);
 
     const [metricas] = await connection.execute(
-      'SELECT inicializacoes_count, paradas_emergencia_count, tempo_operando_minutos, tempo_manutencao_minutos FROM metricas_diarias ORDER BY data_registro ASC LIMIT 7'
+      'SELECT inicializacoes_count, paradas_emergencia_count, tempo_operando_segundos, tempo_manutencao_segundos FROM metricas_diarias ORDER BY data_registro ASC LIMIT 7'
     );
 
     const arrayIni = metricas.map(m => m.inicializacoes_count);
     const arrayPe = metricas.map(m => m.paradas_emergencia_count);
 
-    const totalOperando = metricas.reduce((acc, curr) => acc + Number(curr.tempo_operando_minutos), 0);
-    const totalManutencao = metricas.reduce((acc, curr) => acc + Number(curr.tempo_manutencao_minutos), 0);
+    // Soma total em Segundos
+    const totalOperandoSeg = metricas.reduce((acc, curr) => acc + Number(curr.tempo_operando_segundos), 0);
+    const totalManutencaoSeg = metricas.reduce((acc, curr) => acc + Number(curr.tempo_manutencao_segundos), 0);
     const totalParadas = metricas.reduce((acc, curr) => acc + Number(curr.paradas_emergencia_count), 0);
 
     const [equipamento] = await connection.execute(
-      'SELECT status_atual, ultima_inicializacao, uptime_minutos, paradas_emergencia_count FROM equipamentos WHERE id = 1'
+      'SELECT status_atual, ultima_inicializacao, uptime_segundos, paradas_emergencia_count FROM equipamentos WHERE id = 1'
     );
     const eq = equipamento[0] || {};
     
-    const horasUptime = Math.floor((eq.uptime_minutos || 0) / 60);
-    const minutosUptime = (eq.uptime_minutos || 0) % 60;
+    // 👇 Calcula o tempo real se a máquina estiver ligada neste momento
+    let totalSegundosUptime = eq.uptime_segundos || 0;
+    if (eq.status_atual === 'online' && eq.ultima_inicializacao) {
+        const agora = new Date();
+        const inicio = new Date(eq.ultima_inicializacao);
+        const segundosRodandoAgora = Math.floor((agora - inicio) / 1000);
+        totalSegundosUptime += segundosRodandoAgora;
+    }
 
+    // Formata o uptime total de segundos para Horas, Minutos e Segundos
+    const horasUptime = Math.floor(totalSegundosUptime / 3600);
+    const minutosUptime = Math.floor((totalSegundosUptime % 3600) / 60);
+    const segundosUptime = totalSegundosUptime % 60;
+
+    // 👇 Adicionado %s para buscar os segundos no MySQL
     const [logs] = await connection.execute(
-      'SELECT tipo_evento, DATE_FORMAT(data_inicio, "%d/%m/%Y") as data_formatada, DATE_FORMAT(data_inicio, "%H:%i") as hora_inicio, DATE_FORMAT(data_fim, "%H:%i") as hora_fim, duracao_minutos FROM logs_operacao ORDER BY data_inicio DESC LIMIT 5'
+      'SELECT tipo_evento, DATE_FORMAT(data_inicio, "%d/%m/%Y") as data_formatada, DATE_FORMAT(data_inicio, "%H:%i:%s") as hora_inicio, DATE_FORMAT(data_fim, "%H:%i:%s") as hora_fim, duracao_segundos FROM logs_operacao ORDER BY data_inicio DESC LIMIT 5'
     );
 
-    const logsFormatados = logs.map(log => ({
-      data: log.data_formatada,
-      inicio: log.hora_inicio,
-      fim: log.hora_fim || '--:--',
-      tempo: log.duracao_minutos ? `${Math.floor(log.duracao_minutos / 60)}h ${log.duracao_minutos % 60}m` : '--',
-      isNormal: log.tipo_evento !== 'parada_emergencia' 
-    }));
+    const logsFormatados = logs.map(log => {
+      let tempoFormatado = '--';
+      
+      // Converte duração em segundos para HH:MM:SS
+      if (log.duracao_segundos !== null) {
+          const h = Math.floor(log.duracao_segundos / 3600);
+          const m = Math.floor((log.duracao_segundos % 3600) / 60);
+          const s = log.duracao_segundos % 60;
+          
+          if (h > 0) {
+              tempoFormatado = `${h}h ${m}m ${s}s`;
+          } else if (m > 0) {
+              tempoFormatado = `${m}m ${s}s`;
+          } else {
+              tempoFormatado = `${s}s`;
+          }
+      }
+
+      return {
+        data: log.data_formatada,
+        inicio: log.hora_inicio,
+        fim: log.hora_fim || '--:--:--',
+        tempo: tempoFormatado,
+        isNormal: log.tipo_evento !== 'parada_emergencia' 
+      };
+    });
 
     res.json({
         graficoLinha: { ini: arrayIni, pe: arrayPe },
         graficoBarra: { ini: arrayIni, pe: arrayPe },
         graficoBarraHoriz: { ini: arrayIni, pe: arrayPe },
-        graficoRosca: [totalOperando, totalManutencao, totalParadas],
+        // Divide por 60 para o gráfico de rosca continuar equilibrado e não ser engolido pelos segundos
+        graficoRosca: [Math.floor(totalOperandoSeg / 60), Math.floor(totalManutencaoSeg / 60), totalParadas],
         status: {
             isOnline: eq.status_atual === 'online',
             emergencyStops: eq.paradas_emergencia_count || 0,
-            uptime: `${horasUptime}h ${minutosUptime}m`,
-            lastBoot: eq.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '--'
+            uptime: `${horasUptime}h ${minutosUptime}m ${segundosUptime}s`, // 👈 Mostra os Segundos
+            lastBoot: eq.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : '--'
         },
         logsTabela: logsFormatados
     });
