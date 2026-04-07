@@ -58,7 +58,19 @@
     </div>
 
     <script src="../backend/cadastro.js"></script>
-    
+    <script type="module">
+      import { supabase } from './js/supabase.js'
+        
+      // Exemplo: Testar se está funcionando
+      console.log("Supabase carregado:", supabase)
+        
+      // Exemplo de função para pegar dados
+      async function carregarDados() {
+        const { data, error } = await supabase.from('sua_tabela').select('*')
+        if (error) console.error('Erro:', error)
+        else console.log('Dados:', data)
+      }
+    </script>
     <script>
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
