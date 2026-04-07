@@ -27,8 +27,10 @@ app.use('/frontend', express.static(path.join(__dirname, 'frontend')));
 // 2. Libera a pasta 'image' (onde estão suas fotos/logos)
 app.use('/image', express.static(path.join(__dirname, 'image')));
 
-// 3. Libera a raiz do projeto (para ele achar o styles.css que está solto)
-app.use(express.static(__dirname)); 
+app.get('/styles.css', (req, res) => {
+  res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
 
 
 // ==========================================================
