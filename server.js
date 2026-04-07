@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3300;
 
 // CONFIGURAÇÃO - Use a SECRET KEY (aquela que começa com sb_secret)
 const supabaseUrl = 'https://ncdviiijzbbqugyiusyq.supabase.co';
-const supabaseKey = 'sb_secret_LLg5qptkujdxgtS4OEjxBg_JBi6luHc'; 
+const supabaseKey = 'sb_publishable_Lwh8-C2Ah3PLP-riPKtq8w_R4oxJgxC'; 
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
