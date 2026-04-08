@@ -8,6 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
     <link rel="stylesheet" href="painel_principal.css">
     
     <script>
@@ -145,44 +148,7 @@
     <script src="../js/painel.js"></script>
 
     <script>
-        // 2º CORREÇÃO: Apenas um "ouvinte" principal (DOMContentLoaded) englobando todo o código.
-        document.addEventListener('DOMContentLoaded', async () => {
-            
-            /* =========================================
-               SESSÃO 1: ANIMAÇÃO DA SIDEBAR (MENU)
-               ========================================= */
-            const menuBtn = document.getElementById('menu-btn');
-            const sidebar = document.getElementById('sidebar');
-            const sidebarTexts = document.querySelectorAll('.sidebar-text');
-            
-            let isCollapsed = false;
-            
-            // Verifica se o botão e o menu existem antes de adicionar o evento de clique
-            if (menuBtn && sidebar) {
-                menuBtn.addEventListener('click', () => {
-                    isCollapsed = !isCollapsed; // Inverte o status atual
-                    
-                    if (isCollapsed) {
-                        // Encolher o menu
-                        sidebar.classList.add('is-collapsed');
-                        gsap.to(sidebarTexts, { 
-                            opacity: 0, x: -10, duration: 0.2, stagger: 0.02, ease: "power1.inOut", 
-                            onComplete: () => sidebarTexts.forEach(t => t.style.display = 'none') 
-                        });
-                        gsap.to(sidebar, { width: "80px", duration: 0.4, ease: "power2.inOut", delay: 0.1 });
-                    } else {
-                        // Expandir o menu
-                        sidebar.classList.remove('is-collapsed');
-                        sidebarTexts.forEach(t => t.style.display = '');
-                        gsap.to(sidebar, { width: "16rem", duration: 0.4, ease: "power2.inOut" });
-                        gsap.to(sidebarTexts, { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power2.out", delay: 0.2 });
-                    }
-                });
-            }
-    
-            /* =========================================
-               SESSÃO 2: CONTROLE DA MÁQUINA (EV3)
-               ========================================= */
+        document.addEventListener("DOMContentLoaded", async () => {
             const btnPlay = document.getElementById('btn-play');
             const btnStop = document.getElementById('btn-stop');
             const statusText = document.getElementById('status-text');
@@ -190,8 +156,7 @@
             const statusPing = document.getElementById('status-ping');
 
             /**
-             * Atualiza visualmente os indicadores de status na tela.
-             * Documentação: Esta função muda as cores para verde (ligado) ou vermelho (desligado).
+             * Atualiza visualmente os indicadores de status na tela
              */
             function updateStatusUI(isOperating) {
                 if (isOperating) {
@@ -209,11 +174,11 @@
             }
 
             /**
-             * Envia comandos de Play/Stop para o servidor.
+             * Envia comandos de Play/Stop para o servidor
              */
             async function mandarComando(comando) {
                 try {
-                    statusText.innerText = 'PROCESSANDO...'; // Feedback visual imediato
+                    statusText.innerText = 'PROCESSANDO...';
                     
                     const resposta = await fetch(`/api/esteira/${comando}`, {
                         method: 'POST',
@@ -233,7 +198,7 @@
             }
 
             /**
-             * Verifica o estado atual no banco de dados quando a página abre.
+             * Verifica o estado atual no banco de dados (Persistência)
              */
             async function checkInitialStatus() {
                 try {
@@ -245,18 +210,12 @@
                 }
             }
 
-            // Garante que os botões existem antes de associar os eventos (evita erros)
-            if(btnPlay) {
-                btnPlay.addEventListener('click', () => mandarComando('play'));
-            }
-            if(btnStop) {
-                btnStop.addEventListener('click', () => mandarComando('stop'));
-            }
+            // Listeners de Clique
+            if(btnPlay) btnPlay.addEventListener('click', () => mandarComando('play'));
+            if(btnStop) btnStop.addEventListener('click', () => mandarComando('stop'));
 
-            // Chama a verificação inicial para pintar a tela com o status real do banco
             checkInitialStatus();
-            
-        }); // Fim do nosso único DOMContentLoaded. Tudo perfeito agora!
+        });
     </script>
 </body>
 </html>
