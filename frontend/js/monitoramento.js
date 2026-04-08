@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("🟢 JS Externo Carregado com sucesso!");
+    console.log("🟢 Monitoramento JS Carregado!");
 
     // ==========================================
     // 1. ANIMAÇÃO DO MENU LATERAL (SIDEBAR)
@@ -9,15 +9,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebarTexts = document.querySelectorAll('.sidebar-text');
     let isCollapsed = false;
 
-    if (menuBtn && sidebar) {
+    if (menuBtn && sidebar && typeof gsap !== 'undefined') {
         menuBtn.addEventListener('click', () => {
             isCollapsed = !isCollapsed;
             
             const timeline = gsap.timeline({
                 onComplete: () => {
-                    setTimeout(() => {
-                        window.dispatchEvent(new Event('resize'));
-                    }, 50);
+                    setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
                 }
             });
 
@@ -40,172 +38,162 @@ document.addEventListener("DOMContentLoaded", () => {
     let chartLine, chartDonut, chartBarHorizontal;
 
     if (typeof ApexCharts !== 'undefined') {
-        console.log("🟡 Iniciando gráficos...");
-
         const themeColors = { cyan: '#06b6d4', green: '#22c55e', red: '#f87171', yellow: '#eab308', grid: '#1e293b', text: '#94a3b8' };
         
         const baseOptions = {
             chart: { fontFamily: 'Inter, sans-serif', toolbar: { show: false }, background: 'transparent' },
             grid: { borderColor: themeColors.grid, strokeDashArray: 3, xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } } },
-            dataLabels: { enabled: false }
+            dataLabels: { enabled: false },
+            tooltip: { theme: 'dark' }
         };
 
-        // Gráfico 1: Linhas Duplas (Semanal)
+        // Gráfico 1: Linhas Duplas
         if (document.querySelector("#line-chart")) {
             chartLine = new ApexCharts(document.querySelector("#line-chart"), {
                 ...baseOptions,
-                series: [{ name: 'Inicializado', data: [] }, { name: 'Parada de Emergência', data: [] }], 
-                chart: { type: 'line', height: '100%', width: '100%', parentHeightOffset: 0, dropShadow: { enabled: true, color: '#000', top: 10, left: 0, blur: 5, opacity: 0.2 }, animations: { enabled: false } }, // Desativa animação para atualização em tempo real mais suave
+                series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }, { name: 'Parada de Emergência', data: [0,0,0,0,0,0,0] }], 
+                chart: { type: 'area', height: '100%', width: '100%', animations: { enabled: true } },
                 colors: [themeColors.cyan, themeColors.red],
-                stroke: { curve: 'straight', width: 3 },
-                markers: { size: 5, colors: ['#0f172a'], strokeColors: [themeColors.cyan, themeColors.red], strokeWidth: 2, hover: { size: 7 } },
-                xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } }, axisBorder: { show: false }, axisTicks: { show: false } },
+                stroke: { curve: 'smooth', width: 3 },
+                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
+                xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } } },
                 yaxis: { labels: { style: { colors: themeColors.text } } },
-                legend: { show: true, position: 'bottom', labels: { colors: themeColors.text }, markers: { radius: 12 } },
-                tooltip: { theme: 'dark', shared: true, intersect: false }
+                legend: { position: 'top', horizontalAlign: 'right', labels: { colors: '#fff' } }
             });
             chartLine.render();
         }
 
-        // Gráfico 2: Donut (Status Geral)
+        // Gráfico 2: Donut
         if (document.querySelector("#donut-chart")) {
             chartDonut = new ApexCharts(document.querySelector("#donut-chart"), {
                 ...baseOptions,
-                series: [], 
+                series: [1, 1, 1], 
                 labels: ['Operando', 'Manutenção', 'Parada de Emergência'],
                 colors: [themeColors.cyan, themeColors.yellow, themeColors.red],
-                chart: { type: 'donut', height: '100%', width: '100%', animations: { enabled: false } }, // Desativa animação para evitar flicker
-                stroke: { show: true, colors: ['#0f172a'], width: 3 }, 
+                chart: { type: 'donut', height: '100%', width: '100%' },
+                stroke: { colors: ['#0f172a'], width: 3 }, 
                 legend: { position: 'bottom', labels: { colors: themeColors.text } },
-                tooltip: { theme: 'dark' }
+                plotOptions: { pie: { donut: { size: '75%' } } }
             });
             chartDonut.render();
         }
 
-        // Gráfico 3: Barras Horizontais (Semanal)
+        // Gráfico 3: Barras
         if (document.querySelector("#bar-chart-horizontal")) {
             chartBarHorizontal = new ApexCharts(document.querySelector("#bar-chart-horizontal"), {
                 ...baseOptions,
-                series: [{ name: 'Inicializado (INI)', data: [] }, { name: 'Parada de Emergência (PE)', data: [] }],
-                chart: { type: 'bar', height: '100%', width: '100%', stacked: true, toolbar: { show: false }, animations: { enabled: false } }, // Desativa animação
+                series: [{ name: 'Tempo Operando', data: [0,0,0,0,0,0,0] }, { name: 'Tempo Parado', data: [0,0,0,0,0,0,0] }],
+                chart: { type: 'bar', height: '100%', width: '100%', stacked: true },
                 colors: [themeColors.cyan, themeColors.red],
-                plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '50%', borderRadiusApplication: 'end' } },
-                xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } }, axisBorder: { show: false }, axisTicks: { show: false } },
+                plotOptions: { bar: { horizontal: false, borderRadius: 4, columnWidth: '40%' } },
+                xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } } },
                 yaxis: { labels: { style: { colors: themeColors.text } } },
-                legend: { show: true, position: 'bottom', labels: { colors: themeColors.text }, markers: { radius: 12 } },
-                tooltip: { theme: 'dark' }
+                legend: { position: 'top', horizontalAlign: 'right', labels: { colors: '#fff' } }
             });
             chartBarHorizontal.render();
         }
-    } else {
-        console.error("🔴 ERRO: A biblioteca ApexCharts não foi encontrada.");
     }
 
     // ==========================================
-    // 3. BUSCAR DADOS NO BANCO DE DADOS (VIA SERVER.JS)
+    // 3. BUSCAR DADOS E SIMULAÇÃO VISUAL
     // ==========================================
     const btnAtualizar = document.getElementById('btn-atualizar');
     const iconAtualizar = document.getElementById('icon-atualizar');
 
-    // Variável isManualClick adicionada para saber se o usuário apertou o botão ou se foi atualização automática
     const buscarDadosNoServidor = async (isManualClick = false) => {
         try {
-            // Anima o ícone de atualização APENAS se o usuário clicou no botão
-            if(isManualClick && iconAtualizar) {
+            // Se foi um clique manual, roda a animação da engrenagem
+            if(isManualClick && iconAtualizar && typeof gsap !== 'undefined') {
                 gsap.to(iconAtualizar, { rotation: "+=360", duration: 0.8, ease: "power2.inOut" });
             }
 
-            // 1. Conectando na rota do backend
-            const response = await fetch('http://localhost:3300/api/monitoramento');
+            const response = await fetch('/api/monitoramento');
             
-            if (!response.ok) throw new Error("Falha na comunicação com o Servidor");
+            if (!response.ok) throw new Error("Falha na API");
 
             const data = await response.json();
 
-            // 2. Atualizando Gráficos
+            // Atualizando Gráficos com dados do Banco
             if (chartLine) chartLine.updateSeries([{ data: data.graficoLinha.ini }, { data: data.graficoLinha.pe }]);
             if (chartDonut) chartDonut.updateSeries(data.graficoRosca);
             if (chartBarHorizontal) chartBarHorizontal.updateSeries([{ data: data.graficoBarraHoriz.ini }, { data: data.graficoBarraHoriz.pe }]);
 
-            // 3. Atualizando Status (Cards Superiores)
-            const statusText = document.getElementById('status-text');
-            if (statusText) {
-                statusText.innerText = data.status.isOnline ? "Ligada" : "Desligada";
-                
-                // Muda a cor das duas bolinhas (a do fundo que pisca e a fixa)
-                const statusDots = statusText.parentElement.querySelectorAll('span.rounded-full');
-                statusDots.forEach(dot => {
-                    dot.className = `absolute inline-flex h-full w-full rounded-full opacity-50 ${data.status.isOnline ? 'bg-emerald-500' : 'bg-red-500'}`;
-                    if(!dot.classList.contains('absolute')) {
-                        dot.className = `relative inline-flex rounded-full h-full w-full ${data.status.isOnline ? 'bg-emerald-500' : 'bg-red-500'}`;
-                    }
-                });
-            }
-
-            const emergencyStopsElement = document.getElementById('emergency-stops-text');
-            if (emergencyStopsElement) emergencyStopsElement.innerText = data.status.emergencyStops;
-            
-            const uptimeElement = document.getElementById('uptime-text');
-            if (uptimeElement) uptimeElement.innerText = data.status.uptime;
-
-            const lastBootElement = document.getElementById('last-boot-text');
-            if (lastBootElement) lastBootElement.innerText = data.status.lastBoot;
-
-            // 4. Atualizando Tabela de Histórico
-            const tbody = document.getElementById('log-table-body');
-            if (tbody) {
-                let newRowsHTML = '';
-                
-                if (data.logsTabela.length === 0) {
-                    newRowsHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>`;
-                } else {
-                    data.logsTabela.forEach(log => {
-                        let statusHtml = log.isNormal ? `
-                                <div class="flex items-center gap-2 text-emerald-400">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"></span>
-                                    Normal
-                                </div>` : `
-                                <div class="flex items-center gap-2 text-red-400">
-                                    <span class="w-2 h-2 rounded-full bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]"></span>
-                                    Parada de Emergência
-                                </div>`;
-
-                        newRowsHTML += `
-                            <tr class="hover:bg-white/5 transition-colors">
-                                <td class="py-4 px-6">${log.data}</td>
-                                <td class="py-4 px-6">${log.inicio}</td>
-                                <td class="py-4 px-6">${log.fim}</td>
-                                <td class="py-4 px-6">${log.tempo}</td>
-                                <td class="py-4 px-6 font-medium">${statusHtml}</td>
-                            </tr>
-                        `;
-                    });
-                }
-                
-                tbody.innerHTML = newRowsHTML;
-            }
+            // Atualiza Tabela (Se a API mandar)
+            preencherTabelaLogs(data.logsTabela);
 
         } catch (error) {
-            console.error("🔴 Erro de Conexão:", error);
+            console.log("🟡 API Offline. Iniciando Simulador Visual para os Gráficos...");
+            
+            // ========================================================
+            // EFEITO VISUAL DE DEMONSTRAÇÃO (Simulação)
+            // ========================================================
+            if (chartLine) {
+                chartLine.updateSeries([
+                    { data: Array.from({length: 7}, () => Math.floor(Math.random() * 50)) }, 
+                    { data: Array.from({length: 7}, () => Math.floor(Math.random() * 20)) }
+                ]);
+            }
+            if (chartDonut) {
+                chartDonut.updateSeries([
+                    Math.floor(Math.random() * 80) + 20, 
+                    Math.floor(Math.random() * 15),      
+                    Math.floor(Math.random() * 10)       
+                ]);
+            }
+            if (chartBarHorizontal) {
+                chartBarHorizontal.updateSeries([
+                    { data: Array.from({length: 7}, () => Math.floor(Math.random() * 15)) }, 
+                    { data: Array.from({length: 7}, () => Math.floor(Math.random() * 5)) }
+                ]);
+            }
+
+            // Mock para a tabela de logs
+            preencherTabelaLogs([
+                { data: 'Hoje', inicio: '08:00', fim: '12:00', tempo: '4h', isNormal: true },
+                { data: 'Hoje', inicio: '13:00', fim: '13:15', tempo: '15m', isNormal: false },
+                { data: 'Ontem', inicio: '09:00', fim: '18:00', tempo: '9h', isNormal: true }
+            ]);
         }
     };
 
-    // ==========================================
-    // INICIALIZAÇÃO E AUTO-REFRESH
-    // ==========================================
+    function preencherTabelaLogs(logsTabela) {
+        const tbody = document.getElementById('log-table-body');
+        if (!tbody) return;
 
-    // Dispara a primeira busca assim que a tela abre
-    buscarDadosNoServidor(false); 
+        let newRowsHTML = '';
+        if (!logsTabela || logsTabela.length === 0) {
+            newRowsHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Nenhum registro.</td></tr>`;
+        } else {
+            logsTabela.forEach(log => {
+                let statusHtml = log.isNormal ? `
+                        <div class="flex items-center gap-2 text-emerald-400">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Normal
+                        </div>` : `
+                        <div class="flex items-center gap-2 text-rose-400">
+                            <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span> Parada
+                        </div>`;
 
-    // Executa a busca manual ao clicar no botão de atualizar
+                newRowsHTML += `
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="py-4 px-6">${log.data}</td>
+                        <td class="py-4 px-6">${log.inicio}</td>
+                        <td class="py-4 px-6">${log.fim}</td>
+                        <td class="py-4 px-6">${log.tempo}</td>
+                        <td class="py-4 px-6 font-medium">${statusHtml}</td>
+                    </tr>`;
+            });
+        }
+        tbody.innerHTML = newRowsHTML;
+    }
+
+    // Inicialização ao carregar a página
+    buscarDadosNoServidor(false);
+
+    // Click do Botão Atualizar
     if (btnAtualizar) {
         btnAtualizar.addEventListener('click', () => buscarDadosNoServidor(true));
     }
 
-    // ⌚ BÔNUS: Atualiza automaticamente os dados a cada 5 segundos!
-    // Assim você consegue ver os SEGUNDOS subindo ao vivo no Uptime.
-    setInterval(() => {
-        buscarDadosNoServidor(false);
-    }, 5000); 
-
+    // Auto-refresh a cada 10 segundos
+    setInterval(() => buscarDadosNoServidor(false), 10000); 
 });

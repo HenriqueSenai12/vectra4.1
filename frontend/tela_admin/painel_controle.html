@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <link rel="stylesheet" href="painel_principal.css">
     
     <script>
@@ -42,33 +43,31 @@
                 </div>
             </div>
 
- <nav class="flex-1 py-6 flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden no-scrollbar">
-     <a href="#" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
-         <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-         <i class="ph ph-house text-2xl min-w-[24px]"></i>
-         <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Home</span>
-     </a>
-     
-     <a href="painel_monitoramento.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
-         <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-         <i class="ph ph-chart-pie text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
-         <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Dashboard</span>
-     </a>
-     
-     
-     
-     <a href="painel_usuarios.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
-         <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-         <i class="ph ph-users text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
-         <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Usuários</span>
-     </a>
-     
-     <a href="painel_config.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
-         <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-         <i class="ph ph-gear text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
-         <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Configurações</span>
-     </a>
- </nav>
+            <nav class="flex-1 py-6 flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden no-scrollbar">
+                <a href="#" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-house text-2xl min-w-[24px]"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Home</span>
+                </a>
+                
+                <a href="painel_monitoramento.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-chart-pie text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Dashboard</span>
+                </a>
+                
+                <a href="painel_usuarios.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-users text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Usuários</span>
+                </a>
+                
+                <a href="painel_config.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-gear text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Configurações</span>
+                </a>
+            </nav>
 
             <div class="p-4 border-t border-white/5 overflow-hidden">
                 <a href="../login.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-2 rounded-xl relative group transition-all duration-300">
@@ -81,7 +80,7 @@
 
         <main class="flex-1 flex flex-col h-full w-full overflow-y-auto">
             
-                       <header class="h-20 bg-[#0E1F35]/50 backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.2)] flex items-center justify-between px-8 z-10 sticky top-0 border-b border-white/10">
+            <header class="h-20 bg-[#0E1F35]/50 backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.2)] flex items-center justify-between px-8 z-10 sticky top-0 border-b border-white/10">
                 <div class="flex items-center gap-4">
                     <button id="menu-btn" class="text-white hover:text-vectra-light transition-colors">
                         <i class="ph ph-list text-3xl"></i>
@@ -101,6 +100,7 @@
                     <img id="userAvatarHeader" src="https://ui-avatars.com/api/?name=Operador+Vectra&background=1E3A5F&color=fff" alt="Avatar" class="w-10 h-10 rounded-full border border-white/20 cursor-pointer user-avatar-header">
                 </div>
             </header>
+            
             <div class="flex-1 p-6 flex items-start justify-center">
                 <div class="bg-[#152036]/80 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl flex flex-col p-8 card-animado max-w-4xl mx-auto w-full mt-4">
                     
@@ -142,11 +142,11 @@
             
         </main>
     </div> 
-    <script src="../js/painel"></script>
+    
+    <script src="../js/painel.js"></script>
 
     <script>
-    
-    document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             // Sidebar Animação
             const menuBtn = document.getElementById('menu-btn');
             const sidebar = document.getElementById('sidebar');
@@ -171,9 +171,7 @@
                     }
                 });
             }
-    
-    
-        document.addEventListener("DOMContentLoaded", async () => {
+            // Lógica dos Botões da Esteira 
             const btnPlay = document.getElementById('btn-play');
             const btnStop = document.getElementById('btn-stop');
             const statusText = document.getElementById('status-text');
@@ -237,8 +235,8 @@
             }
 
             // Listeners de Clique
-            btnPlay.addEventListener('click', () => mandarComando('play'));
-            btnStop.addEventListener('click', () => mandarComando('stop'));
+            if (btnPlay) btnPlay.addEventListener('click', () => mandarComando('play'));
+            if (btnStop) btnStop.addEventListener('click', () => mandarComando('stop'));
 
             // Executa ao carregar a página para manter o estado
             checkInitialStatus();
