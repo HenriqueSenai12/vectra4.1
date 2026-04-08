@@ -242,54 +242,37 @@
             // ===============================================================
             // 1. CARREGAR OS DADOS DO USUÁRIO NA TELA
             // ===============================================================
-           // ===============================================================
-            // 1. CARREGAR OS DADOS DO USUÁRIO NA TELA
-            // ===============================================================
             async function loadUserProfile() {
                 try {
-                    // 1. Pega os dados que já foram salvos no navegador no momento do Login
+                    // Pega o nome do navegador
                     const storedUser = JSON.parse(localStorage.getItem('vectraUser') || '{}');
-                    const nomeLogado = storedUser.nome || storedUser.nome_completo || 'Usuário';
-                    const emailLogado = storedUser.email || '';
+                    const nomeLogado = storedUser.nome || storedUser.nome_completo;
                     
-                    if (!nomeLogado || nomeLogado === 'Usuário') return;
+                    if (!nomeLogado) return; // Se não tem nome, nem tenta.
 
-                    // 2. MOSTRA NA TELA IMEDIATAMENTE (Garante que o Avatar e os Inputs não fiquem em branco)
-                    document.getElementById('input-nome').value = nomeLogado;
-                    document.getElementById('input-email').value = emailLogado || 'Buscando e-mail...';
-                    
-                    // 👉 Sua funcionalidade do Avatar aplicada de imediato aqui:
-                    document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeLogado)}&background=1E3A5F&color=fff`;
-
-                    // 3. Pede pro servidor a lista de todos os usuários para confirmar o ID e email
+                    // Pede pro servidor a lista de todos os usuários
                     const response = await fetch('/api/users');
                     if (response.ok) {
                         const todosUsuarios = await response.json();
                         
                         // Procura qual usuário tem esse exato nome
-                        const myUser = todosUsuarios.find(u => u.nome_completo === nomeLogado || u.nome === nomeLogado || u.email === emailLogado);
+                        const myUser = todosUsuarios.find(u => u.nome_completo === nomeLogado || u.nome === nomeLogado);
                         
                         if (myUser) {
-                            loggedUserId = myUser.id; // Guarda o ID para poder atualizar a senha!
+                            loggedUserId = myUser.id; // Guarda o ID para poder atualizar!
                             
-                            // Preenche os Inputs com os dados oficiais do banco
-                            document.getElementById('input-nome').value = myUser.nome_completo || myUser.nome || '';
+                            // Preenche os Inputs
+                            document.getElementById('input-nome').value = myUser.nome_completo || '';
                             document.getElementById('input-email').value = myUser.email || '';
                             document.getElementById('input-senha').value = ''; // Mantém vazio por segurança
                             
-                            // 👉 Atualiza a foto de Avatar novamente caso o nome completo do banco seja mais preciso
-                            const nomeOficial = myUser.nome_completo || myUser.nome;
-                            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeOficial)}&background=1E3A5F&color=fff`;
-
-                            // Atualiza o cache do navegador
-                            storedUser.id = myUser.id;
-                            storedUser.email = myUser.email;
-                            localStorage.setItem('vectraUser', JSON.stringify(storedUser));
+                            // Atualiza a foto de Avatar
+                            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(myUser.nome_completo)}&background=1E3A5F&color=fff`;
                         }
                     }
                 } catch (error) {
                     console.error('Erro carregando perfil:', error);
-                    // Não mostramos showToast de erro aqui, pois a tela já foi preenchida no passo 2!
+                    showToast('Não foi possível carregar o perfil.', 'error');
                 }
             }
 
