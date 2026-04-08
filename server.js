@@ -34,7 +34,7 @@ app.get('/styles.css', (req, res) => {
 });
 
 // ==========================================================
-// ROTAS
+// ROTAS GERAIS
 // ==========================================================
 
 app.get('/', (req, res) => {
@@ -70,7 +70,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==========================================================
-// ROTAS DE USUÁRIOS (CRUD - CONNECTADO AO SUPABASE)
+// ROTAS DE USUÁRIOS (CRUD)
 // ==========================================================
 
 // 1. Listar todos os usuários (GET)
@@ -150,8 +150,6 @@ app.delete('/api/users/:id', async (req, res) => {
     }
 });
 
-
-
 // ROTA PARA LISTAR TODOS OS USUÁRIOS (Para o painel administrativo)
 app.get('/api/usuarios', async (req, res) => {
     try {
@@ -165,7 +163,6 @@ app.get('/api/usuarios', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
 
 // ==========================================================
 // ROTA DE SUPORTE / PUBLICAÇÕES
@@ -192,49 +189,6 @@ app.post('/api/publicacoes', async (req, res) => {
     }
 });
 
-
-// ==========================================================
-// MONITORAMENTO (ESTATÍSTICAS)
-// ==========================================================
-app.get('/api/monitoramento', async (req, res) => {
-    try {
-        const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
-        const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
-        // Busca os logs, inclusive os que estão "em_andamento" para mostrar na tabela
-        const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(10); // Aumentei o limite para 10 para ver melhor o histórico
-
-        if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
-
-        res.json({
-            graficoLinha: { 
-                ini: metricas?.map(m => m.inicializacoes_count) || [], 
-                pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
-            },
-            status: {
-                isOnline: eq?.status_atual === 'online',
-                emergencyStops: eq?.paradas_emergencia_count || 0,
-                uptime: `${eq?.uptime_minutos || 0} min`,
-                // Adicionado o 'pt-BR' para forçar o formato 24h brasileiro (HH:MM:SS)
-                lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString('pt-BR') : '--'
-            },
-            logsTabela: logs?.map(l => ({
-                // Adicionado o 'pt-BR' na data para forçar DD/MM/YYYY
-                data: new Date(l.data_inicio).toLocaleDateString('pt-BR'),
-                // Adicionado o 'pt-BR' na hora de início (HH:MM:SS)
-                inicio: new Date(l.data_inicio).toLocaleTimeString('pt-BR'),
-                // Adicionado o 'pt-BR' na hora de fim (HH:MM:SS)
-                fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString('pt-BR') : 'Rodando...',
-                tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
-                operador: l.usuario_nome || l.usuario_email || 'Sistema', // Puxa o operador que configuramos no passo anterior
-                isNormal: l.tipo_evento !== 'parada_emergencia'
-            })) || []
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-
 // ==========================================================
 // CONTROLE DA ESTEIRA (PLAY / STOP / STATUS)
 // ==========================================================
@@ -257,20 +211,25 @@ app.get('/api/esteira/status', async (req, res) => {
     }
 });
 
-// 2. ROTA PLAY: Inicia a operação e atualiza o status do equipamento
+// 2. ROTA PLAY: Inicia a operação, atualiza status e REGISTRA O OPERADOR
 app.post('/api/esteira/play', async (req, res) => {
+    // Recebendo os dados do operador enviados pelo frontend
+    const { nome, email } = req.body;
+
     try {
         // Atualiza o status na tabela de equipamentos
         await supabase.from('equipamentos').update({ status_atual: 'online', ultima_inicializacao: new Date() }).eq('id', 1);
 
-        // Cria o log de início
+        // Cria o log de início incluindo quem apertou o play
         const { error } = await supabase
             .from('logs_operacao')
             .insert([{ 
                 equipamento_id: 1, 
                 status: 'em_andamento', 
                 tipo_evento: 'operacao_normal',
-                descricao: 'Iniciado via Painel de Controle'
+                descricao: 'Iniciado via Painel de Controle',
+                usuario_nome: nome || 'Sistema',
+                usuario_email: email || null
             }]);
 
         if (error) throw error;
@@ -323,16 +282,28 @@ app.post('/api/esteira/stop', async (req, res) => {
 });
 
 // ==========================================================
-// MONITORAMENTO (ESTATÍSTICAS)
+// MONITORAMENTO (ESTATÍSTICAS) - FUSO HORÁRIO E DATA BRASIL
 // ==========================================================
 app.get('/api/monitoramento', async (req, res) => {
     try {
         const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
         const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
-        // Busca os logs, inclusive os que estão "em_andamento" para mostrar na tabela
-        const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(5);
+        const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(10); // Limite de 10 na tabela
 
         if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
+
+        // Regras para forçar fuso horário de Brasília, modelo 24h e segundos
+        const opcoesHora = { 
+            timeZone: 'America/Sao_Paulo', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit', 
+            hour12: false // Remove AM/PM
+        };
+        
+        const opcoesData = {
+            timeZone: 'America/Sao_Paulo'
+        };
 
         res.json({
             graficoLinha: { 
@@ -343,13 +314,14 @@ app.get('/api/monitoramento', async (req, res) => {
                 isOnline: eq?.status_atual === 'online',
                 emergencyStops: eq?.paradas_emergencia_count || 0,
                 uptime: `${eq?.uptime_minutos || 0} min`,
-                lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString() : '--'
+                lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString('pt-BR', opcoesHora) : '--'
             },
             logsTabela: logs?.map(l => ({
-                data: new Date(l.data_inicio).toLocaleDateString(),
-                inicio: new Date(l.data_inicio).toLocaleTimeString(),
-                fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString() : 'Rodando...',
+                data: new Date(l.data_inicio).toLocaleDateString('pt-BR', opcoesData),
+                inicio: new Date(l.data_inicio).toLocaleTimeString('pt-BR', opcoesHora),
+                fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString('pt-BR', opcoesHora) : 'Rodando...',
                 tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
+                operador: l.usuario_nome || l.usuario_email || 'Sistema',
                 isNormal: l.tipo_evento !== 'parada_emergencia'
             })) || []
         });
@@ -358,9 +330,9 @@ app.get('/api/monitoramento', async (req, res) => {
     }
 });
 
-// Exporta para a Vercel
-module.exports = app;
-
+// ==========================================================
+// INICIALIZAÇÃO DO SERVIDOR
+// ==========================================================
 
 // Exporta para a Vercel
 module.exports = app;
