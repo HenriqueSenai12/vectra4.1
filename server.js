@@ -193,37 +193,47 @@ app.post('/api/publicacoes', async (req, res) => {
 });
 
 
+// ==========================================================
+// MONITORAMENTO (ESTATÍSTICAS)
+// ==========================================================
 app.get('/api/monitoramento', async (req, res) => {
-  try {
-    const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
-    const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
-    const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(5);
+    try {
+        const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
+        const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
+        // Busca os logs, inclusive os que estão "em_andamento" para mostrar na tabela
+        const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(10); // Aumentei o limite para 10 para ver melhor o histórico
 
-    if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
+        if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
 
-    res.json({
-      graficoLinha: { 
-        ini: metricas?.map(m => m.inicializacoes_count) || [], 
-        pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
-      },
-      status: {
-        isOnline: eq?.status_atual === 'online',
-        emergencyStops: eq?.paradas_emergencia_count || 0,
-        uptime: `${eq?.uptime_minutos || 0} min`,
-        lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString() : '--'
-      },
-      logsTabela: logs?.map(l => ({
-        data: new Date(l.data_inicio).toLocaleDateString(),
-        inicio: new Date(l.data_inicio).toLocaleTimeString(),
-        fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString() : '--',
-        tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
-        isNormal: l.tipo_evento !== 'parada_emergencia'
-      })) || []
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+        res.json({
+            graficoLinha: { 
+                ini: metricas?.map(m => m.inicializacoes_count) || [], 
+                pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
+            },
+            status: {
+                isOnline: eq?.status_atual === 'online',
+                emergencyStops: eq?.paradas_emergencia_count || 0,
+                uptime: `${eq?.uptime_minutos || 0} min`,
+                // Adicionado o 'pt-BR' para forçar o formato 24h brasileiro (HH:MM:SS)
+                lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString('pt-BR') : '--'
+            },
+            logsTabela: logs?.map(l => ({
+                // Adicionado o 'pt-BR' na data para forçar DD/MM/YYYY
+                data: new Date(l.data_inicio).toLocaleDateString('pt-BR'),
+                // Adicionado o 'pt-BR' na hora de início (HH:MM:SS)
+                inicio: new Date(l.data_inicio).toLocaleTimeString('pt-BR'),
+                // Adicionado o 'pt-BR' na hora de fim (HH:MM:SS)
+                fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString('pt-BR') : 'Rodando...',
+                tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
+                operador: l.usuario_nome || l.usuario_email || 'Sistema', // Puxa o operador que configuramos no passo anterior
+                isNormal: l.tipo_evento !== 'parada_emergencia'
+            })) || []
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
+
 
 // ==========================================================
 // CONTROLE DA ESTEIRA (PLAY / STOP / STATUS)
