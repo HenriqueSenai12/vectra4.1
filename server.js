@@ -225,6 +225,133 @@ app.get('/api/monitoramento', async (req, res) => {
   }
 });
 
+// ==========================================================
+// CONTROLE DA ESTEIRA (PLAY / STOP / STATUS)
+// ==========================================================
+
+// 1. ROTA DE STATUS: Verifica se a máquina está ligada ao carregar a página
+app.get('/api/esteira/status', async (req, res) => {
+    try {
+        const { data: logAtivo, error } = await supabase
+            .from('logs_operacao')
+            .select('*')
+            .eq('status', 'em_andamento')
+            .eq('equipamento_id', 1)
+            .maybeSingle();
+
+        if (error) throw error;
+        // Retorna true se houver um log "em_andamento"
+        res.json({ ligado: !!logAtivo });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2. ROTA PLAY: Inicia a operação e atualiza o status do equipamento
+app.post('/api/esteira/play', async (req, res) => {
+    try {
+        // Atualiza o status na tabela de equipamentos
+        await supabase.from('equipamentos').update({ status_atual: 'online', ultima_inicializacao: new Date() }).eq('id', 1);
+
+        // Cria o log de início
+        const { error } = await supabase
+            .from('logs_operacao')
+            .insert([{ 
+                equipamento_id: 1, 
+                status: 'em_andamento', 
+                tipo_evento: 'operacao_normal',
+                descricao: 'Iniciado via Painel de Controle'
+            }]);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3. ROTA STOP: Finaliza, calcula a duração e atualiza o equipamento
+app.post('/api/esteira/stop', async (req, res) => {
+    try {
+        // Atualiza status do equipamento
+        await supabase.from('equipamentos').update({ status_atual: 'offline' }).eq('id', 1);
+
+        // Busca o log que estava aberto
+        const { data: logAberto, error: errBusca } = await supabase
+            .from('logs_operacao')
+            .select('*')
+            .eq('status', 'em_andamento')
+            .eq('equipamento_id', 1)
+            .maybeSingle();
+
+        if (errBusca) throw errBusca;
+
+        if (logAberto) {
+            const dataInicio = new Date(logAberto.data_inicio);
+            const dataFim = new Date();
+            // Calcula duração em minutos
+            const duracaoMs = dataFim - dataInicio;
+            const duracaoMinutos = Math.max(1, Math.round(duracaoMs / 60000));
+
+            // Atualiza o log para finalizado
+            const { error: errUpdate } = await supabase
+                .from('logs_operacao')
+                .update({ 
+                    data_fim: dataFim.toISOString(),
+                    duracao_minutos: duracaoMinutos,
+                    status: 'finalizado'
+                })
+                .eq('id', logAberto.id);
+
+            if (errUpdate) throw errUpdate;
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================================
+// MONITORAMENTO (ESTATÍSTICAS)
+// ==========================================================
+app.get('/api/monitoramento', async (req, res) => {
+    try {
+        const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
+        const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
+        // Busca os logs, inclusive os que estão "em_andamento" para mostrar na tabela
+        const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(5);
+
+        if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
+
+        res.json({
+            graficoLinha: { 
+                ini: metricas?.map(m => m.inicializacoes_count) || [], 
+                pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
+            },
+            status: {
+                isOnline: eq?.status_atual === 'online',
+                emergencyStops: eq?.paradas_emergencia_count || 0,
+                uptime: `${eq?.uptime_minutos || 0} min`,
+                lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString() : '--'
+            },
+            logsTabela: logs?.map(l => ({
+                data: new Date(l.data_inicio).toLocaleDateString(),
+                inicio: new Date(l.data_inicio).toLocaleTimeString(),
+                fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString() : 'Rodando...',
+                tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
+                isNormal: l.tipo_evento !== 'parada_emergencia'
+            })) || []
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Exporta para a Vercel
+module.exports = app;
+
+
 // Exporta para a Vercel
 module.exports = app;
 
