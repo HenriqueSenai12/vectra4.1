@@ -138,7 +138,7 @@ app.post('/api/esteira/stop', async (req, res) => {
         // 1. Desliga o equipamento
         await supabase.from('equipamentos').update({ status_atual: 'offline' }).eq('id', 1);
 
-        // 2. Busca o log aberto (pegando o usuario_id para não perdê-lo)
+        // 2. Busca o log aberto
         const { data: logAberto, error: errBusca } = await supabase
             .from('logs_operacao')
             .select('id, data_inicio, usuario_id') 
@@ -151,31 +151,39 @@ app.post('/api/esteira/stop', async (req, res) => {
         if (errBusca) throw errBusca;
 
         if (logAberto) {
+            console.log("Log encontrado para fechar:", logAberto); // Verifique o usuario_id no console
+
             const dataInicio = new Date(logAberto.data_inicio);
             const dataFim = new Date();
             const duracaoMs = dataFim - dataInicio;
             const duracaoSegundos = Math.floor(duracaoMs / 1000);
 
-            // 3. Atualiza incluindo o usuario_id original para garantir persistência
+            // 3. ATUALIZAÇÃO SEGURA
+            // Se o usuario_id veio como objeto {id: ...}, pegamos só o ID. 
+            // Se veio como valor, usamos o valor.
+            const idParaPersistir = logAberto.usuario_id?.id || logAberto.usuario_id;
+
             const { error: errUpdate } = await supabase
                 .from('logs_operacao')
                 .update({ 
                     data_fim: dataFim.toISOString(),
                     duracao_minutos: duracaoSegundos, 
                     status: 'finalizado',
-                    usuario_id: logAberto.usuario_id // <--- REAFIRMAÇÃO DO ID AQUI
+                    usuario_id: idParaPersistir // Garante que o valor correto volte para a coluna
                 })
                 .eq('id', logAberto.id);
 
             if (errUpdate) throw errUpdate;
+            console.log("Log fechado com sucesso. Usuario_id preservado:", idParaPersistir);
         }
 
         res.json({ success: true });
     } catch (err) {
-        console.error(err);
+        console.error("Erro no Stop:", err);
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // ==========================================================
 // MONITORAMENTO (ESTATÍSTICAS)
