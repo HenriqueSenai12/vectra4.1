@@ -9,22 +9,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <style>
-        body { background-color: #0B1120; }
-        .card-animado { transition: transform 0.3s ease; }
-        .card-animado:hover { transform: translateY(-5px); }
-        
-        #aurora-container {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 50%, #1e3a5f 0%, #0b1120 100%);
-            z-index: -1;
-        }
-
-        /* Estilo para manter a sidebar responsiva conforme seu padrão */
-        #sidebar.collapsed { width: 80px; }
-        #sidebar.collapsed .sidebar-text { display: none; }
-    </style>
+    <link rel="stylesheet" href="painel_principal.css">
     
     <script>
         tailwind.config = {
