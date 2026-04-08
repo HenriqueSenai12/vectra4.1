@@ -220,7 +220,7 @@
             }
 
             /**
-             * Envia comandos de Play/Stop para o servidor
+             * Envia comandos de Play/Stop para o servidor JUNTO COM O USUÁRIO LOGADO
              */
             async function mandarComando(comando) {
                 try {
@@ -234,10 +234,22 @@
                         btnStop.disabled = true;
                         btnStop.classList.add('opacity-50', 'cursor-not-allowed');
                     }
+
+                    // 1. RECUPERAR O USUÁRIO LOGADO DO NAVEGADOR
+                    const userString = localStorage.getItem('vectraUser');
+                    const storedUser = userString ? JSON.parse(userString) : null;
                     
+                    // Prepara os dados. Se ninguém estiver logado, envia como desconhecido.
+                    const dadosUsuario = {
+                        nome: storedUser ? storedUser.nome : 'Usuário Desconhecido',
+                        email: storedUser ? storedUser.email : 'desconhecido@vectra.com'
+                    };
+                    
+                    // 2. ENVIAR COMANDO + DADOS DO USUÁRIO NO BODY
                     const resposta = await fetch(`/api/esteira/${comando}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dadosUsuario) // <-- E-mail e Nome enviados aqui
                     });
                     
                     if (resposta.ok) {
