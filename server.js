@@ -135,10 +135,9 @@ app.post('/api/esteira/play', async (req, res) => {
 
 app.post('/api/esteira/stop', async (req, res) => {
     try {
-        // 1. Desliga o equipamento
         await supabase.from('equipamentos').update({ status_atual: 'offline' }).eq('id', 1);
 
-        // 2. Busca o log aberto
+        // Busca o log, garantindo que pegamos o usuario_id puro
         const { data: logAberto, error: errBusca } = await supabase
             .from('logs_operacao')
             .select('id, data_inicio, usuario_id') 
@@ -151,17 +150,18 @@ app.post('/api/esteira/stop', async (req, res) => {
         if (errBusca) throw errBusca;
 
         if (logAberto) {
-            console.log("Log encontrado para fechar:", logAberto); // Verifique o usuario_id no console
-
             const dataInicio = new Date(logAberto.data_inicio);
             const dataFim = new Date();
-            const duracaoMs = dataFim - dataInicio;
-            const duracaoSegundos = Math.floor(duracaoMs / 1000);
+            const duracaoSegundos = Math.floor((dataFim - dataInicio) / 1000);
 
-            // 3. ATUALIZAÇÃO SEGURA
-            // Se o usuario_id veio como objeto {id: ...}, pegamos só o ID. 
-            // Se veio como valor, usamos o valor.
-            const idParaPersistir = logAberto.usuario_id?.id || logAberto.usuario_id;
+            // --- TRATAMENTO DO USUARIO_ID ---
+            let idFinal = null;
+            if (logAberto.usuario_id) {
+                // Se for objeto {id: 1}, pega o .id. Se for só o número 1, usa ele mesmo.
+                idFinal = typeof logAberto.usuario_id === 'object' 
+                    ? logAberto.usuario_id.id 
+                    : logAberto.usuario_id;
+            }
 
             const { error: errUpdate } = await supabase
                 .from('logs_operacao')
@@ -169,20 +169,18 @@ app.post('/api/esteira/stop', async (req, res) => {
                     data_fim: dataFim.toISOString(),
                     duracao_minutos: duracaoSegundos, 
                     status: 'finalizado',
-                    usuario_id: idParaPersistir // Garante que o valor correto volte para a coluna
+                    usuario_id: idFinal // Re-insere o ID tratado
                 })
                 .eq('id', logAberto.id);
 
             if (errUpdate) throw errUpdate;
-            console.log("Log fechado com sucesso. Usuario_id preservado:", idParaPersistir);
         }
-
         res.json({ success: true });
     } catch (err) {
-        console.error("Erro no Stop:", err);
         res.status(500).json({ error: err.message });
     }
 });
+
 
 
 // ==========================================================
