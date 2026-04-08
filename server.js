@@ -69,6 +69,88 @@ app.post('/api/login', async (req, res) => {
     res.json({ success: true, user: { nome: usuario.nome_completo, funcao: usuario.funcao } });
 });
 
+// ==========================================================
+// ROTAS DE USUÁRIOS (CRUD - CONNECTADO AO SUPABASE)
+// ==========================================================
+
+// 1. Listar todos os usuários (GET)
+app.get('/api/users', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .select('*')
+            .order('id', { ascending: true }); // Ordena por ID
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2. Criar novo usuário (POST)
+app.post('/api/users', async (req, res) => {
+    const { nome_completo, email, funcao, senha } = req.body;
+
+    try {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .insert([{ nome_completo, email, funcao, senha }])
+            .select(); // Retorna o usuário criado
+
+        if (error) throw error;
+        res.status(201).json(data[0]);
+    } catch (err) {
+        // Se o email já existir, o Supabase vai disparar um erro que pegamos aqui
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// 3. Atualizar usuário (PUT)
+app.put('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nome_completo, funcao, senha } = req.body;
+
+    // Montamos um objeto só com o que vai ser atualizado
+    const updateData = { nome_completo, funcao };
+    
+    // Se a senha foi preenchida, nós a atualizamos. Se veio vazia, ignoramos.
+    if (senha) {
+        updateData.senha = senha;
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .update(updateData)
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// 4. Deletar usuário (DELETE)
+app.delete('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const { error } = await supabase
+            .from('usuarios')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        res.json({ success: true, message: "Usuário deletado com sucesso!" });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+
 
 // ROTA PARA LISTAR TODOS OS USUÁRIOS (Para o painel administrativo)
 app.get('/api/usuarios', async (req, res) => {
