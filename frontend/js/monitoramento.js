@@ -95,37 +95,64 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 3. BUSCAR DADOS E SIMULAÇÃO VISUAL
+    // 3. BUSCAR DADOS DO SUPABASE E ATUALIZAR
     // ==========================================
     const btnAtualizar = document.getElementById('btn-atualizar');
     const iconAtualizar = document.getElementById('icon-atualizar');
 
     const buscarDadosNoServidor = async (isManualClick = false) => {
         try {
-            // Se foi um clique manual, roda a animação da engrenagem
+            // Animação da engrenagem rodando no clique
             if(isManualClick && iconAtualizar && typeof gsap !== 'undefined') {
                 gsap.to(iconAtualizar, { rotation: "+=360", duration: 0.8, ease: "power2.inOut" });
             }
 
             const response = await fetch('/api/monitoramento');
-            
             if (!response.ok) throw new Error("Falha na API");
 
             const data = await response.json();
 
-            // Atualizando Gráficos com dados do Banco
-            if (chartLine) chartLine.updateSeries([{ data: data.graficoLinha.ini }, { data: data.graficoLinha.pe }]);
-            if (chartDonut) chartDonut.updateSeries(data.graficoRosca);
-            if (chartBarHorizontal) chartBarHorizontal.updateSeries([{ data: data.graficoBarraHoriz.ini }, { data: data.graficoBarraHoriz.pe }]);
+            // 3.1. ATUALIZAR CARDS SUPERIORES
+            const uptimeEl = document.getElementById('info-uptime');
+            const lastBootEl = document.getElementById('info-lastboot');
+            const emergencyEl = document.getElementById('info-emergency');
 
-            // Atualiza Tabela (Se a API mandar)
-            preencherTabelaLogs(data.logsTabela);
+            if (uptimeEl && data.status) uptimeEl.innerText = data.status.uptime;
+            if (lastBootEl && data.status) lastBootEl.innerText = data.status.lastBoot;
+            if (emergencyEl && data.status) emergencyEl.innerText = data.status.emergencyStops;
+
+            // 3.2. ATUALIZAR GRÁFICOS
+            if (chartLine && data.graficoLinha) {
+                chartLine.updateSeries([
+                    { data: data.graficoLinha.ini }, 
+                    { data: data.graficoLinha.pe }
+                ]);
+            }
+            
+            // (Nota: Se o seu server.js mandar as props graficoRosca e graficoBarraHoriz, elas serão atualizadas)
+            if (chartDonut && data.graficoRosca) chartDonut.updateSeries(data.graficoRosca);
+            if (chartBarHorizontal && data.graficoBarraHoriz) {
+                chartBarHorizontal.updateSeries([
+                    { data: data.graficoBarraHoriz.ini }, 
+                    { data: data.graficoBarraHoriz.pe }
+                ]);
+            }
+
+            // 3.3. ATUALIZAR TABELA
+            if (data.logsTabela) {
+                preencherTabelaLogs(data.logsTabela);
+            }
+
+            // Feedback Toast (se a função existir)
+            if (isManualClick && typeof showToast === 'function') {
+                showToast('Dados de monitoramento atualizados!', 'success');
+            }
 
         } catch (error) {
             console.log("🟡 API Offline. Iniciando Simulador Visual para os Gráficos...");
             
             // ========================================================
-            // EFEITO VISUAL DE DEMONSTRAÇÃO (Simulação)
+            // EFEITO VISUAL DE DEMONSTRAÇÃO (Se não achar o servidor)
             // ========================================================
             if (chartLine) {
                 chartLine.updateSeries([
@@ -147,15 +174,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 ]);
             }
 
-            // Mock para a tabela de logs
             preencherTabelaLogs([
                 { data: 'Hoje', inicio: '08:00', fim: '12:00', tempo: '4h', isNormal: true },
                 { data: 'Hoje', inicio: '13:00', fim: '13:15', tempo: '15m', isNormal: false },
                 { data: 'Ontem', inicio: '09:00', fim: '18:00', tempo: '9h', isNormal: true }
             ]);
+
+            if (isManualClick && typeof showToast === 'function') {
+                showToast('Erro ao conectar na API (Modo simulação ativado).', 'error');
+            }
         }
     };
 
+    // ==========================================
+    // 4. FUNÇÃO PARA PREENCHER TABELA E SETUP
+    // ==========================================
     function preencherTabelaLogs(logsTabela) {
         const tbody = document.getElementById('log-table-body');
         if (!tbody) return;
@@ -186,14 +219,17 @@ document.addEventListener("DOMContentLoaded", () => {
         tbody.innerHTML = newRowsHTML;
     }
 
-    // Inicialização ao carregar a página
-    buscarDadosNoServidor(false);
-
-    // Click do Botão Atualizar
+    // Configura Botão
     if (btnAtualizar) {
         btnAtualizar.addEventListener('click', () => buscarDadosNoServidor(true));
     }
 
-    // Auto-refresh a cada 10 segundos
-    setInterval(() => buscarDadosNoServidor(false), 10000); 
-});
+    // Busca ao carregar a página
+    buscarDadosNoServidor(false);
+
+    // Configura o Auto-Refresh a cada 10 segundos
+    setInterval(() => {
+        buscarDadosNoServidor(false);
+    }, 10000);
+
+}); // <- O FECHAMENTO QUE ESTAVA FALTANDO É ESTE AQUI!

@@ -44,15 +44,23 @@
             </div>
 
             <nav class="flex-1 py-6 flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden no-scrollbar">
-                <a href="#" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                <a href="painel_principal.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
                     <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <i class="ph ph-house text-2xl min-w-[24px]"></i>
                     <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Home</span>
                 </a>
                 
-
+                <a href="painel_monitoramento.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-chart-pie text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Dashboard</span>
+                </a>
                 
-             
+                <a href="painel_usuarios.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-users text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Usuários</span>
+                </a>
                 
                 <a href="painel_config.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
                     <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -123,7 +131,7 @@
                             <span class="text-emerald-500 font-bold tracking-widest text-sm sm:text-base">INICIAR</span>
                         </button>
 
-                        <button id="btn-stop" class="group relative flex flex-col items-center justify-center w-36 h-36 sm:w-48 sm:h-48 bg-[#0B1120] border border-red-500/20 rounded-2xl hover:bg-red-500/10 hover:border-red-500 transition-all duration-300">
+                        <button id="btn-stop" class="group relative flex flex-col items-center justify-center w-36 h-36 sm:w-48 sm:h-48 bg-[#0B1120] border border-red-500/20 rounded-2xl hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
                             <i class="ph-fill ph-power text-6xl sm:text-7xl text-red-500 mb-2 group-hover:scale-110 transition-transform duration-300"></i>
                             <span class="text-red-500 font-bold tracking-widest text-sm sm:text-base">DESLIGAR</span>
                         </button>
@@ -135,6 +143,7 @@
         </main>
     </div> 
     
+    <script src="../js/painel.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -162,7 +171,10 @@
                     }
                 });
             }
-            // Lógica dos Botões da Esteira 
+
+            // ==========================================
+            // Lógica dos Botões da Esteira (Com Melhorias)
+            // ==========================================
             const btnPlay = document.getElementById('btn-play');
             const btnStop = document.getElementById('btn-stop');
             const statusText = document.getElementById('status-text');
@@ -170,7 +182,7 @@
             const statusPing = document.getElementById('status-ping');
 
             /**
-             * Atualiza visualmente os indicadores de status na tela
+             * Atualiza visualmente os indicadores de status na tela e trava os botões
              */
             function updateStatusUI(isOperating) {
                 if (isOperating) {
@@ -179,11 +191,31 @@
                     statusDot.className = "relative inline-flex rounded-full h-4 w-4 bg-emerald-500";
                     statusPing.className = "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-emerald-400";
                     statusPing.style.display = 'block';
+                    
+                    // Trava o botão Play e libera o Stop
+                    if(btnPlay) {
+                        btnPlay.disabled = true;
+                        btnPlay.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    if(btnStop) {
+                        btnStop.disabled = false;
+                        btnStop.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
                 } else {
                     statusText.innerText = 'DESLIGADO';
                     statusText.className = "block font-mono font-bold text-lg text-red-500";
                     statusDot.className = "relative inline-flex rounded-full h-4 w-4 bg-red-500";
                     statusPing.style.display = 'none';
+
+                    // Trava o botão Stop e libera o Play
+                    if(btnPlay) {
+                        btnPlay.disabled = false;
+                        btnPlay.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                    if(btnStop) {
+                        btnStop.disabled = true;
+                        btnStop.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
                 }
             }
 
@@ -192,8 +224,16 @@
              */
             async function mandarComando(comando) {
                 try {
-                    // Feedback visual imediato de "processando"
+                    // Feedback visual e trava os dois botões temporariamente
                     statusText.innerText = 'PROCESSANDO...';
+                    if(btnPlay) {
+                        btnPlay.disabled = true;
+                        btnPlay.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    if(btnStop) {
+                        btnStop.disabled = true;
+                        btnStop.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
                     
                     const resposta = await fetch(`/api/esteira/${comando}`, {
                         method: 'POST',
@@ -209,6 +249,7 @@
                 } catch (erro) {
                     console.error('Erro de conexão:', erro);
                     statusText.innerText = 'ERRO DE CONEXÃO';
+                    checkInitialStatus(); // Reverte os botões caso o servidor esteja fora
                 }
             }
 
@@ -229,7 +270,7 @@
             if (btnPlay) btnPlay.addEventListener('click', () => mandarComando('play'));
             if (btnStop) btnStop.addEventListener('click', () => mandarComando('stop'));
 
-            // Executa ao carregar a página para manter o estado
+            // Executa ao carregar a página para manter o estado e iniciar visualmente correto
             checkInitialStatus();
         });
     </script>
