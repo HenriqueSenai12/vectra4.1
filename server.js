@@ -1,108 +1,88 @@
-const express = require('express'); // <-- Corrigido para 'const' minúsculo!
+const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-
 const PORT = process.env.PORT || 3300;
 
-// Configuração do Supabase
-const supabaseUrl = 'https://ncdviiijzbbqugyiusyq.supabase.co';
-const supabaseKey = 'sb_publishable_Lwh8-C2Ah3PLP-riPKtq8w_R4oxJgxC'; 
+// ==========================================================
+// CONFIGURAÇÃO ÚNICA DO SUPABASE
+// Prioriza as variáveis da Vercel, se não existirem, usa as fixas
+// ==========================================================
+const supabaseUrl = process.env.SUPABASE_PUBLIC_URL || 'https://ncdviiijzbbqugyiusyq.supabase.co';
+const supabaseKey = process.env.SUPABASE_PUBLIC_KEY || 'sb_publishable_Lwh8-C2Ah3PLP-riPKtq8w_R4oxJgxC';
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error("❌ ERRO: Credenciais do Supabase não encontradas!");
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
 // ==========================================================
-// CONFIGURAÇÃO DOS ARQUIVOS ESTÁTICOS (CSS, IMAGENS, JS)
-// A ordem aqui é muito importante! Tem que vir antes das rotas.
+// ARQUIVOS ESTÁTICOS
 // ==========================================================
-
-// 1. Libera a pasta 'frontend' (onde estão seus outros CSS e HTMLs)
-// Assim, o HTML vai achar os arquivos em caminhos como "/frontend/tela_admin/dashboard.css"
 app.use('/frontend', express.static(path.join(__dirname, 'frontend')));
-
-// 2. Libera a pasta 'image' (onde estão suas fotos/logos)
 app.use('/image', express.static(path.join(__dirname, 'image')));
 
 app.get('/styles.css', (req, res) => {
   res.sendFile(path.join(__dirname, 'styles.css'));
 });
 
-
-
 // ==========================================================
-// ROTAS DO SEU SITE
+// ROTAS
 // ==========================================================
 
-// Rota Principal (Tela Inicial)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Rota de Monitoramento (Para o seu Dashboard mostrar os dados)
+// ROTA DE TESTE DE BANCO (Para você ter certeza)
+app.get('/api/test-db', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('usuarios').select('nome_completo').limit(1);
+        if (error) throw error;
+        res.json({ status: "✅ Conectado ao Supabase!", data });
+    } catch (err) {
+        res.status(500).json({ status: "❌ Erro na conexão", message: err.message });
+    }
+});
+
 app.get('/api/monitoramento', async (req, res) => {
   try {
-    const { data: eq, error: err1 } = await supabase
-      .from('equipamentos').select('*').eq('id', 1).single();
-
-    const { data: metricas, error: err2 } = await supabase
-      .from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
-
-    const { data: logs, error: err3 } = await supabase
-      .from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(5);
+    const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
+    const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
+    const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(5);
 
     if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
 
     res.json({
       graficoLinha: { 
-        ini: metricas.map(m => m.inicializacoes_count), 
-        pe: metricas.map(m => m.paradas_emergencia_count) 
+        ini: metricas?.map(m => m.inicializacoes_count) || [], 
+        pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
       },
       status: {
-        isOnline: eq.status_atual === 'online',
-        emergencyStops: eq.paradas_emergencia_count,
-        uptime: `${eq.uptime_minutos || 0} min`,
-        lastBoot: eq.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString() : '--'
+        isOnline: eq?.status_atual === 'online',
+        emergencyStops: eq?.paradas_emergencia_count || 0,
+        uptime: `${eq?.uptime_minutos || 0} min`,
+        lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString() : '--'
       },
-      logsTabela: logs.map(l => ({
+      logsTabela: logs?.map(l => ({
         data: new Date(l.data_inicio).toLocaleDateString(),
         inicio: new Date(l.data_inicio).toLocaleTimeString(),
         fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString() : '--',
         tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
         isNormal: l.tipo_evento !== 'parada_emergencia'
-      }))
+      })) || []
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = process.env.SUPABASE_PUBLIC_URL;
-const supabaseKey = process.env.SUPABASE_PUBLIC_KEY;
-
-// Verifica se as variáveis foram carregadas
-if (!supabaseUrl || !supabaseKey) {
-    console.error("❌ ERRO: Variáveis de ambiente do Supabase não encontradas!");
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// ROTA DE TESTE DE BANCO
-app.get('/api/test-db', async (req, res) => {
-    try {
-        const { data, error } = await supabase.from('usuarios').select('nome_completo').limit(1);
-        if (error) throw error;
-        res.json({ status: "Conectado", data });
-    } catch (err) {
-        res.status(500).json({ status: "Erro", message: err.message });
-    }
-});
-
 
 // Exporta para a Vercel
 module.exports = app;
