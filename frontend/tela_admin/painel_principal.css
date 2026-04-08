@@ -147,58 +147,77 @@ body {
 /* ==========================================================================
    6. RESPONSIVIDADE (MOBILE / TABLETS PEQUENOS)
    ========================================================================== */
+/* ==========================================================================
+   6. RESPONSIVIDADE (MOBILE / TABLETS PEQUENOS)
+   ========================================================================== */
 @media (max-width: 768px) {
     
-    /* 1. Previne que a página passe do limite da tela horizontalmente no mobile */
+    /* Previne rolagem horizontal não intencional no mobile */
     body {
         overflow-x: hidden;
         overflow-y: auto;
     }
 
-    /* 2. Ajuste de Performance da Aurora no Mobile (Evita lag no Chrome/Brave) */
+    /* Ajuste de Performance da Aurora no Mobile (Chrome/Brave) */
     #aurora-container::before, #aurora-container::after {
         width: 80vw;
         height: 80vh;
-        filter: blur(100px); /* Reduzido levemente o blur para não engasgar CPUs de celular */
+        filter: blur(100px); 
     }
 
-    /* 3. Ajuste Crítico: Logo da Vectra 
-       Removemos os margins negativos fixos que quebram o layout no celular */
-    .container-logo {
-        justify-content: flex-start;
-        gap: 12px;
+    /* 1. HEADER ACIMA DE TUDO
+       Garante que o botão de menu não seja coberto pelo sidebar */
+    header {
+        position: sticky !important;
+        top: 0;
+        z-index: 110 !important; 
     }
 
-    .container-logo img {
-        right: 0;
-        height: 45px; /* Deixa a logo menor e proporcional */
-    }
-
-    .container-logo span {
-        margin-left: 0;
-        font-size: 18px;
-    }
-
-    /* 4. Menu Lateral Flutuante (Overlayer)
-       No mobile, o menu deve ficar por cima do conteúdo, e não espremer a tela principal */
+    /* 2. MENU LATERAL NO MOBILE
+       Começa abaixo do Header para não cobrir a barra superior */
     #sidebar {
         position: fixed;
         left: 0;
-        top: 0;
+        top: 80px; /* Altura do header (h-20) */
+        height: calc(100vh - 80px);
         z-index: 100;
-        height: 100%;
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
     }
 
-    /* Oculta completamente o menu lateral quando estiver recolhido no celular */
-    #sidebar.is-collapsed, #sidebar.collapsed {
-        transform: translateX(-100%) !important; /* Joga pra fora da tela em vez de encolher */
-        width: 0 !important;
-        opacity: 0;
+    /* 3. AJUSTE DA LOGO (.container-logo) PARA O MENU MINIMIZADO
+       Remove os valores do desktop e centraliza apenas a imagem */
+    #sidebar .h-20 {
+        padding: 0;
+        justify-content: center;
     }
 
-    /* 5. Ajuste de Delay das Animações
-       Em telas móveis, todos os cards devem carregar juntos para evitar longas esperas ao rolar a tela */
+    .container-logo {
+        justify-content: center;
+        width: 100%;
+        margin: 0;
+    }
+
+    .container-logo img {
+        right: 0; /* Reseta as margens negativas do desktop */
+        height: 40px; /* Tamanho proporcional para os 80px do menu */
+        max-width: 100%;
+    }
+
+    /* Oculta apenas a palavra "VECTRA" para a logo caber no menu encolhido */
+    .container-logo span {
+        display: none !important; 
+    }
+
+    /* 4. COMPORTAMENTO MINIMIZADO
+       No mobile, o menu fica com 80px mostrando os ícones e a logo alinhada. */
+    #sidebar.is-collapsed, #sidebar.collapsed {
+        transform: translateX(0) !important; 
+        width: 80px !important; 
+        opacity: 1;
+    }
+
+    /* 5. CARREGAMENTO IMEDIATO
+       Zera os delays para que os cards carreguem de uma vez na rolagem */
     .delay-1, .delay-2, .delay-3, .delay-4, .delay-5, .delay-6 {
         animation-delay: 0s;
     }
