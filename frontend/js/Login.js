@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================
-  // 3. SISTEMA DE LOGIN (MANTIDO)
+  // 3. SISTEMA DE LOGIN
   // ==========================================
   if (loginBtn && emailInput && passwordInput) {
     loginBtn.addEventListener('click', async (e) => {
@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
       loginBtn.innerHTML = 'Aguarde...';
       loginBtn.style.pointerEvents = 'none';
 
-            try {
-        // 1. Envia os dados para a rota de login que criamos no servidor
+      try {
+        // 1. Envia os dados para a rota de login
         const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -51,30 +51,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await response.json();
 
         if (result.success) {
-          const user = result.user; // O servidor já devolve o usuário certo
+          const user = result.user; // O servidor devolve nome e funcao
 
-          // 2. Salva os dados no localStorage para usar nas outras telas
+          // 2. SALVA OS DADOS NO LOCALSTORAGE (Agora incluindo o email!)
           localStorage.setItem('vectraUser', JSON.stringify({ 
             nome: user.nome, 
-            funcao: user.funcao 
+            funcao: user.funcao,
+            email: email // Pega o email que o usuário acabou de digitar
           }));
 
-// O CAMINHO CORRETO PARA A VERCEL
-if (user.funcao === 'admin') {
-    window.location.href = '/frontend/tela_admin/painel_principal.html';
-} else {
-    window.location.href = '/frontend/tela_operador/painel_principal.html';
-}
-
+          // 3. REDIRECIONA BASEADO NA FUNÇÃO
+          if (user.funcao === 'admin') {
+              window.location.href = '/frontend/tela_admin/painel_principal.html';
+          } else {
+              window.location.href = '/frontend/tela_operador/painel_principal.html';
+          }
 
         } else {
-          // Se o servidor responder que os dados estão errados
+          // Se o servidor responder que os dados estão errados (O Famoso erro 401)
           alert(result.message || 'Credenciais inválidas');
           loginBtn.innerHTML = textoOriginal;
           loginBtn.style.pointerEvents = 'auto';
         }
       } catch (err) {
-        // Esse erro acontece se o servidor (Vercel) estiver fora do ar ou com erro 500
+        // Erro de conexão
         alert('Erro de conexão com o servidor');
         console.error(err);
         loginBtn.innerHTML = textoOriginal;
