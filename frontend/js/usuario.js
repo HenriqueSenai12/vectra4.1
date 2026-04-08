@@ -1,278 +1,307 @@
-// backend/usuario.js - User management for usuarios.html
-// Connected to MySQL via /api/users (server.js)
+// ==========================================================================
+// SCRIPT DE USUÁRIOS (CRUD CONECTADO AO SERVER.JS -> SUPABASE)
+// ==========================================================================
 
-let users = [];
-let currentEditingUser = null;
-let userToDelete = null;
+let usersList = [];
+let currentEditingUserId = null;
+let currentDeletingUserId = null;
 
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Carregar os usuários assim que a tela abre
+    loadUsers();
 
-document.addEventListener('DOMContentLoaded', function() {
-  // Bind event listeners
-  bindEvents();
-  loadUsers();
-  
-updateHeaderAvatar();
+    // 2. Mapeamento de Botões e Modais
+    const btnOpenModal = document.getElementById('btnOpenModal');
+    const btnSaveNewUser = document.getElementById('btnSaveNewUser');
+    const btnUpdateUser = document.getElementById('btnUpdateUser');
+    const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+    const searchInput = document.getElementById('searchUsers');
 
+    // Botão de Novo Usuário
+    if (btnOpenModal) {
+        btnOpenModal.addEventListener('click', () => {
+            clearAddForm();
+            openModal('addUserModal', 'modalContent');
+        });
+    }
 
-let loggedUser = localStorage.getItem('loggedUser') ? JSON.parse(localStorage.getItem('loggedUser')) : null;
+    // Botão Salvar Novo Usuário
+    if (btnSaveNewUser) {
+        btnSaveNewUser.addEventListener('click', saveNewUser);
+    }
 
-function updateHeaderAvatar() {
-  const userAvatar = document.getElementById('userAvatarHeader');
-  if (!userAvatar) return;
+    // Botão Salvar Edição
+    if (btnUpdateUser) {
+        btnUpdateUser.addEventListener('click', saveEditUser);
+    }
 
-  let user = loggedUser || users.find(u => (u.role || u.funcao) === 'admin') || users[0] || { name: 'Admin Vectra', role: 'admin' };
-  
-  const name = user.name || user.nome_completo || user.nome || 'Admin Vectra';
-  const isAdmin = (user.role || user.funcao) === 'admin';
-  
-  userAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${isAdmin ? '4FA3FF' : '1E3A5F'}&color=fff&bold=${isAdmin}`;
-  userAvatar.title = name + ' (' + (isAdmin ? 'Admin' : 'Operador') + ')';
-}
+    // Botão Confirmar Exclusão
+    if (btnConfirmDelete) {
+        btnConfirmDelete.addEventListener('click', confirmDeleteUser);
+    }
 
-// Chama após login/sucesso
-function setLoggedUser(user) {
-  loggedUser = user;
-  localStorage.setItem('loggedUser', JSON.stringify(user));
-  updateHeaderAvatar();
-}
+    // Campo de Busca
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = usersList.filter(u => 
+                (u.nome_completo && u.nome_completo.toLowerCase().includes(term)) || 
+                (u.email && u.email.toLowerCase().includes(term))
+            );
+            renderTable(filtered);
+        });
+    }
 
-
+    // Fechar modais ao clicar nos botões de cancelar ou no X
+    document.querySelectorAll('#btnCloseModal, #btnCancelModal, .close-edit-modal, .close-delete-modal').forEach(btn => {
+        btn.addEventListener('click', closeAllModals);
+    });
 });
 
+// ==========================================================================
+// FUNÇÕES DE COMUNICAÇÃO COM A API (SERVER.JS)
+// ==========================================================================
 
-// Step 4 from TODO: Minor update for dynamic delete name
-function bindEvents() {
-  // Search input
-  const searchInput = document.getElementById('searchUsers');
-  if (searchInput) {
-    let searchTimeout;
-    searchInput.addEventListener('input', (e) => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => filterTable(e.target.value.toLowerCase()), 300);
-    });
-  }
-
-  // New user modal
-  document.getElementById('btnOpenModal')?.addEventListener('click', openNewUserModal);
-  document.getElementById('btnSaveNewUser')?.addEventListener('click', saveNewUser);
-  document.getElementById('btnCancelModal')?.addEventListener('click', closeAllModals);
-  document.getElementById('btnCloseModal')?.addEventListener('click', closeAllModals);
-  
-  // Edit modal cancel/close buttons
-  document.querySelector('.close-edit-modal')?.addEventListener('click', closeAllModals);
-  
-  // Delete modal cancel/close buttons
-  document.querySelector('.close-delete-modal')?.addEventListener('click', closeAllModals);
-
-  // Edit modal
-  document.querySelectorAll('.btn-edit-user').forEach(btn => {
-    btn.addEventListener('click', openEditUserModal);
-  });
-
-  // Delete modal
-  document.querySelectorAll('.btn-delete-user').forEach(btn => {
-    btn.addEventListener('click', openDeleteUserModal);
-  });
-
-  document.getElementById('btnUpdateUser')?.addEventListener('click', updateUser);
-  document.getElementById('btnConfirmDelete')?.addEventListener('click', confirmDeleteUser);
-
-  // Close modals on overlay click
-  document.querySelectorAll('[id$="Modal"]').forEach(modal => {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeAllModals();
-    });
-  });
-
-  // Dynamic event delegation for table (new rows)
-  document.getElementById('userTableBody')?.addEventListener('click', handleTableActions);
-}
-
-function handleTableActions(e) {
-  if (e.target.closest('.btn-edit-user')) {
-    openEditUserModal(e);
-  } else if (e.target.closest('.btn-delete-user')) {
-    openDeleteUserModal(e);
-  }
-}
-
+// Buscar todos os usuários (GET)
 async function loadUsers() {
-  try {
-    const response = await fetch('/api/users');
-    if (!response.ok) throw new Error('Failed to fetch users');
-    users = await response.json();
-    renderTable();
-  } catch (error) {
-    console.error('Load users error:', error);
-    alert('Erro ao carregar usuários. Verifique se o servidor está rodando.');
-  }
+    try {
+        const response = await fetch('/api/users');
+        if (!response.ok) throw new Error('Erro ao buscar usuários');
+        
+        usersList = await response.json();
+        renderTable(usersList);
+    } catch (error) {
+        console.error("Erro na conexão:", error);
+        alert("Não foi possível carregar a lista de usuários.");
+    }
 }
 
-let filteredUsers = [];
+// Criar novo usuário (POST)
+async function saveNewUser(e) {
+    e.preventDefault(); // Evita recarregar a tela
+    
+    const nome = document.getElementById('nomeUser').value.trim();
+    const email = document.getElementById('emailUser').value.trim();
+    const funcao = document.getElementById('funcaoUser').value;
+    const senha = document.getElementById('senhaUser').value.trim();
 
-function filterTable(searchTerm) {
-  filteredUsers = users.filter(user => 
-    (user.name || user.nome_completo || '').toLowerCase().includes(searchTerm) ||
-    (user.email || '').toLowerCase().includes(searchTerm)
-  );
-  renderTable();
+    if (!nome || !email || !senha) {
+        alert("Preencha os campos obrigatórios (Nome, E-mail e Senha).");
+        return;
+    }
+
+    const btn = document.getElementById('btnSaveNewUser');
+    btn.innerHTML = 'Salvando...';
+
+    try {
+        const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome_completo: nome, email, funcao, senha })
+        });
+
+        if (response.ok) {
+            closeAllModals();
+            loadUsers(); // Recarrega a tabela atualizada
+        } else {
+            const err = await response.json();
+            alert("Erro ao salvar: " + (err.error || err.message));
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao conectar com o servidor.");
+    } finally {
+        btn.innerHTML = 'Salvar Usuário';
+    }
 }
 
-function renderTable() {
-  const tbody = document.getElementById('userTableBody');
-  if (!tbody) return;
+// Atualizar usuário existente (PUT)
+async function saveEditUser(e) {
+    e.preventDefault();
+    if (!currentEditingUserId) return;
 
-  const displayUsers = filteredUsers.length > 0 ? filteredUsers : users;
-  tbody.innerHTML = displayUsers.map((user, index) => `
-    <tr class="hover:bg-white/5 transition-all duration-200 group">
-      <td class="py-3 px-6">
-        <div class="flex items-center gap-3">
-          <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.nome_completo)}&background=1E3A5F&color=fff" alt="Avatar" class="w-8 h-8 rounded-full border border-white/10">
-          <span class="font-medium text-white group-hover:text-vectra-light transition-colors">${user.name || user.nome_completo}</span>
-        </div>
-      </td>
-      <td class="py-3 px-6 text-slate-300">${user.email}</td>
-      <td class="py-3 px-6">
-        <span class="px-2.5 py-1 text-[11px] font-medium rounded-full bg-${(user.role || user.funcao) === 'admin' ? 'blue' : 'emerald'}-500/20 text-${(user.role || user.funcao) === 'admin' ? 'blue' : 'emerald'}-400 border border-${(user.role || user.funcao) === 'admin' ? 'blue' : 'emerald'}-500/20 uppercase tracking-wide">
-          ${(user.role || user.funcao) === 'admin' ? 'Admin' : 'Operador'}
-        </span>
-      </td>
-      <td class="py-3 px-6 text-slate-400">
-        <div class="flex items-center gap-2">
-          <i class="ph ph-calendar-blank text-lg"></i>
-          <span>${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-        </div>
-      </td>
-      <td class="py-3 px-6 text-slate-400 font-mono tracking-[0.2em]">••••••••</td>
-      <td class="py-3 px-6 text-right">
-        <div class="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-          <button class="btn-edit-user p-1.5 hover:bg-vectra-light/20 hover:text-vectra-light rounded-lg transition-colors" title="Editar" data-user-id="${user.id}">
-            <i class="ph ph-pencil-simple text-[1.1rem]"></i>
-          </button>
-          <button class="btn-delete-user p-1.5 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-colors" title="Excluir" data-user-id="${user.id}">
-            <i class="ph ph-trash text-[1.1rem]"></i>
-          </button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+    const nome = document.getElementById('editNomeUser').value.trim();
+    const funcao = document.getElementById('editFuncaoUser').value;
+    const senha = document.getElementById('editSenhaUser').value.trim(); // Se vazio, backend ignora
+    
+    const btn = document.getElementById('btnUpdateUser');
+    btn.innerHTML = 'Atualizando...';
 
-  bindEvents();
+    try {
+        const response = await fetch(`/api/users/${currentEditingUserId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome_completo: nome, funcao, senha: senha || undefined })
+        });
+
+        if (response.ok) {
+            closeAllModals();
+            loadUsers();
+        } else {
+            alert("Erro ao atualizar usuário.");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao conectar com o servidor.");
+    } finally {
+        btn.innerHTML = 'Salvar Alterações';
+    }
 }
 
-function openNewUserModal() {
-  currentEditingUser = null;
-  document.getElementById('nomeUser').value = '';
-  document.getElementById('emailUser').value = '';
-  document.getElementById('funcaoUser').value = 'operador';
-  document.getElementById('senhaUser').value = '';
-  document.getElementById('addUserModal').classList.remove('hidden', 'opacity-0', 'scale-95');
-  document.getElementById('addUserModal').classList.add('opacity-100', 'scale-100');
+// Deletar usuário (DELETE)
+async function confirmDeleteUser() {
+    if (!currentDeletingUserId) return;
+
+    const btn = document.getElementById('btnConfirmDelete');
+    btn.innerHTML = 'Excluindo...';
+
+    try {
+        const response = await fetch(`/api/users/${currentDeletingUserId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            closeAllModals();
+            loadUsers();
+        } else {
+            alert("Erro ao excluir usuário.");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao conectar com o servidor.");
+    } finally {
+        btn.innerHTML = 'Sim, Excluir';
+    }
 }
 
+// ==========================================================================
+// FUNÇÕES DE INTERFACE (TABELA E MODAIS)
+// ==========================================================================
+
+function renderTable(users) {
+    const tbody = document.getElementById('userTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = ''; // Limpa a tabela estática do HTML
+
+    if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400">Nenhum usuário encontrado.</td></tr>`;
+        return;
+    }
+
+    users.forEach(user => {
+        const date = user.data_registro ? new Date(user.data_registro).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '--';
+        
+        // Estilo das Tags (Admin vs Operador)
+        const isOperador = user.funcao === 'operador';
+        const roleClass = isOperador 
+            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' 
+            : 'bg-blue-500/20 text-blue-400 border-blue-500/20';
+        
+        // Avatar Dinâmico
+        const avatarBg = isOperador ? '0B1120' : '1E3A5F';
+        const avatarColor = isOperador ? 'A0A5AB' : 'fff';
+        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome_completo || 'User')}&background=${avatarBg}&color=${avatarColor}`;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-white/5 transition-all duration-200 group';
+        tr.innerHTML = `
+            <td class="py-3 px-6">
+                <div class="flex items-center gap-3">
+                    <img src="${avatarUrl}" alt="Avatar" class="w-8 h-8 rounded-full border border-white/10">
+                    <span class="font-medium text-white group-hover:text-vectra-light transition-colors">${user.nome_completo}</span>
+                </div>
+            </td>
+            <td class="py-3 px-6 text-slate-300">${user.email}</td>
+            <td class="py-3 px-6">
+                <span class="px-2.5 py-1 text-[11px] font-medium rounded-full border uppercase tracking-wide ${roleClass}">
+                    ${user.funcao}
+                </span>
+            </td>
+            <td class="py-3 px-6 text-slate-400">
+                <div class="flex items-center gap-2">
+                    <i class="ph ph-calendar-blank text-lg"></i>
+                    <span>${date}</span>
+                </div>
+            </td>
+            <td class="py-3 px-6 text-slate-400 font-mono tracking-[0.2em]">••••••••</td>
+            <td class="py-3 px-6 text-right">
+                <div class="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <button onclick="openEditModal(${user.id})" class="p-1.5 hover:bg-vectra-light/20 hover:text-vectra-light rounded-lg transition-colors" title="Editar">
+                        <i class="ph ph-pencil-simple text-[1.1rem]"></i>
+                    </button>
+                    <button onclick="openDeleteModal(${user.id})" class="p-1.5 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-colors" title="Excluir">
+                        <i class="ph ph-trash text-[1.1rem]"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function openEditModal(id) {
+    const user = usersList.find(u => u.id === id);
+    if (!user) return;
+
+    currentEditingUserId = id;
+    
+    // Preenche os campos do modal de edição
+    document.getElementById('editNomeUser').value = user.nome_completo;
+    document.getElementById('editEmailUser').value = user.email; // desativado no HTML
+    document.getElementById('editFuncaoUser').value = user.funcao;
+    document.getElementById('editSenhaUser').value = ''; // Limpa para a pessoa não ver a hash
+    
+    openModal('editUserModal', 'editModalContent');
+}
+
+function openDeleteModal(id) {
+    const user = usersList.find(u => u.id === id);
+    if (!user) return;
+
+    currentDeletingUserId = id;
+    
+    // Atualiza o texto do modal dinamicamente
+    const textContainer = document.querySelector('#deleteModalContent p');
+    if (textContainer) {
+        textContainer.innerHTML = `Tem certeza que deseja excluir <span class="text-white font-medium">${user.nome_completo}</span>? Esta ação não pode ser desfeita.`;
+    }
+
+    openModal('deleteUserModal', 'deleteModalContent');
+}
+
+// Animação de Abrir e Fechar Modais (Adaptada ao seu CSS do Tailwind)
+function openModal(modalId, contentId) {
+    const modal = document.getElementById(modalId);
+    const content = document.getElementById(contentId);
+    if (!modal || !content) return;
+    
+    modal.classList.remove('hidden');
+    // Pequeno atraso para a transição funcionar
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        content.classList.remove('scale-95');
+    }, 10);
+}
 
 function closeAllModals() {
-  // Só modais
-  document.querySelectorAll('#addUserModal, #editUserModal, #deleteUserModal').forEach(modal => {
-    modal.classList.add('hidden', 'opacity-0', 'scale-95');
-    modal.classList.remove('opacity-100', 'scale-100');
-  });
-  
-  // Garantir botão Novo Usuário sempre visível
-  const btnOpen = document.getElementById('btnOpenModal');
-  if (btnOpen) {
-    btnOpen.classList.remove('hidden', 'opacity-0', 'scale-95');
-    btnOpen.classList.add('opacity-100');
-  }
-}
-
-
-async function saveNewUser(e) {
-  e.preventDefault();
-  const nome = document.getElementById('nomeUser').value.trim();
-  const email = document.getElementById('emailUser').value.trim();
-  const funcao = document.getElementById('funcaoUser').value;
-  const senha = document.getElementById('senhaUser').value;
-
-  if (!nome || !email || !senha) {
-    alert('Preencha todos os campos obrigatórios');
-    return;
-  }
-
-  try {
-    const response = await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome_completo: nome, email, funcao, senha })
+    ['addUserModal', 'editUserModal', 'deleteUserModal'].forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal && !modal.classList.contains('hidden')) {
+            modal.classList.add('opacity-0');
+            const content = modal.querySelector('div[id$="ModalContent"]');
+            if (content) content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300); // Tempo da animação no Tailwind
+        }
     });
-    if (!response.ok) throw new Error('Falha ao criar usuário');
-    loadUsers();
-    closeAllModals();
-  } catch (error) {
-    console.error(error);
-    alert('Erro ao criar usuário');
-  }
 }
 
-function openEditUserModal(e) {
-  const userId = e.target.closest('[data-user-id]')?.dataset.userId || e.currentTarget.dataset.userId;
-  currentEditingUser = users.find(u => u.id == userId);
-  if (!currentEditingUser) return;
-
-  document.getElementById('editNomeUser').value = currentEditingUser.name || currentEditingUser.nome_completo || currentEditingUser.nome;
-  document.getElementById('editEmailUser').value = currentEditingUser.email;
-  document.getElementById('editFuncaoUser').value = currentEditingUser.role || currentEditingUser.funcao;
-
-  document.getElementById('editUserModal').classList.remove('hidden', 'opacity-0', 'scale-95');
-  document.getElementById('editUserModal').classList.add('opacity-100', 'scale-100');
+function clearAddForm() {
+    document.getElementById('nomeUser').value = '';
+    document.getElementById('emailUser').value = '';
+    document.getElementById('funcaoUser').value = 'operador';
+    document.getElementById('senhaUser').value = '';
 }
-
-async function updateUser(e) {
-  e.preventDefault();
-  if (!currentEditingUser) return;
-
-  const nome = document.getElementById('editNomeUser').value.trim();
-  const funcao = document.getElementById('editFuncaoUser').value;
-  const senha = document.getElementById('editSenhaUser')?.value || null; // Optional
-
-  try {
-    const response = await fetch(`/api/users/${currentEditingUser.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome_completo: nome, funcao, senha })
-    });
-    if (!response.ok) throw new Error('Falha ao atualizar');
-    loadUsers();
-    closeAllModals();
-  } catch (error) {
-    console.error(error);
-    alert('Erro ao atualizar usuário');
-  }
-}
-
-function openDeleteUserModal(e) {
-  const userId = e.target.closest('[data-user-id]')?.dataset.userId || e.currentTarget.dataset.userId;
-  userToDelete = users.find(u => u.id == userId);
-  if (userToDelete) {
-    document.querySelector('#deleteUserModal p').innerHTML = 
-      `Tem certeza que deseja excluir <span class="text-white font-medium">${userToDelete.name || userToDelete.nome_completo || userToDelete.nome}</span>? Esta ação não pode ser desfeita.`;
-  }
-
-  document.getElementById('deleteUserModal').classList.remove('hidden', 'opacity-0', 'scale-95');
-  document.getElementById('deleteUserModal').classList.add('opacity-100', 'scale-100');
-}
-
-async function confirmDeleteUser() {
-  if (!userToDelete) return;
-
-  try {
-    const response = await fetch(`/api/users/${userToDelete.id}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error('Falha ao deletar');
-    loadUsers();
-    closeAllModals();
-  } catch (error) {
-    console.error(error);
-    alert('Erro ao deletar usuário');
-  }
-}
-
