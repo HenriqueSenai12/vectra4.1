@@ -12,16 +12,20 @@
       "dest": "server.js"
     },
     {
-      "src": "/image/(.*)",
-      "dest": "/image/$1"
-    },
-    {
       "src": "/frontend/(.*)",
       "dest": "/frontend/$1"
     },
     {
+      "src": "/image/(.*)",
+      "dest": "/image/$1"
+    },
+    {
+      "src": "/styles.css",
+      "dest": "/styles.css"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "server.js"
     }
   ]
 }
