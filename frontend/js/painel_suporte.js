@@ -63,16 +63,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================
-    // 2. LÓGICA DE SALVAR NO BANCO
+    // 2. LÓGICA DE SALVAR NO BANCO (COM VALIDAÇÃO)
     // =========================================
     if (btnSalvar) {
         btnSalvar.addEventListener('click', async () => {
             const titulo = inputTitulo.value.trim();
-            const categoria = selectCategoria.value;
+            const categoria = selectCategoria.value; // Pega o valor do Select
             const descricao = textareaDescricao.value.trim();
 
+            // VALIDAÇÃO: Verifica Título
             if (!titulo) {
                 showToast('Por favor, preencha o título antes de salvar.', 'error');
+                return;
+            }
+
+            // VALIDAÇÃO: Verifica Categoria (Não permite "Sem categoria")
+            if (categoria === "Sem categoria" || !categoria) {
+                showToast('Por favor, selecione uma categoria válida.', 'error');
                 return;
             }
 
@@ -98,10 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('count_manutencao', qtdManutencao + 1);
                     }
 
-                    // 1. Mostra o alerta de sucesso
                     showToast('Publicação salva com sucesso!', 'success');
                     
-                    // 2. Espera 1.5 segundos para o usuário ler, e aí muda de página
                     setTimeout(() => {
                         window.location.href = 'painel_principal.html';
                     }, 1500);
@@ -119,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
 
     // =========================================
     // 3. BOTÃO CANCELAR
