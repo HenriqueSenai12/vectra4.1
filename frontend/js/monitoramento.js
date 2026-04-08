@@ -129,7 +129,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 ]);
             }
             
-            // (Nota: Se o seu server.js mandar as props graficoRosca e graficoBarraHoriz, elas serão atualizadas)
             if (chartDonut && data.graficoRosca) chartDonut.updateSeries(data.graficoRosca);
             if (chartBarHorizontal && data.graficoBarraHoriz) {
                 chartBarHorizontal.updateSeries([
@@ -143,7 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 preencherTabelaLogs(data.logsTabela);
             }
 
-            // Feedback Toast (se a função existir)
             if (isManualClick && typeof showToast === 'function') {
                 showToast('Dados de monitoramento atualizados!', 'success');
             }
@@ -174,10 +172,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 ]);
             }
 
+            // CORREÇÃO: Dados de simulação atualizados com o 'operador'
             preencherTabelaLogs([
-                { data: 'Hoje', inicio: '08:00', fim: '12:00', tempo: '4h', isNormal: true },
-                { data: 'Hoje', inicio: '13:00', fim: '13:15', tempo: '15m', isNormal: false },
-                { data: 'Ontem', inicio: '09:00', fim: '18:00', tempo: '9h', isNormal: true }
+                { data: 'Hoje', inicio: '08:00', fim: '12:00', tempo: '4h', operador: 'João Silva', isNormal: true },
+                { data: 'Hoje', inicio: '13:00', fim: '13:15', tempo: '15m', operador: 'Sistema', isNormal: false },
+                { data: 'Ontem', inicio: '09:00', fim: '18:00', tempo: '9h', operador: 'Maria Souza', isNormal: true }
             ]);
 
             if (isManualClick && typeof showToast === 'function') {
@@ -195,7 +194,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let newRowsHTML = '';
         if (!logsTabela || logsTabela.length === 0) {
-            newRowsHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Nenhum registro.</td></tr>`;
+            // CORREÇÃO: colspan alterado para 6
+            newRowsHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400">Nenhum registro.</td></tr>`;
         } else {
             logsTabela.forEach(log => {
                 let statusHtml = log.isNormal ? `
@@ -206,12 +206,17 @@ document.addEventListener("DOMContentLoaded", () => {
                             <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span> Parada
                         </div>`;
 
+                // Tratamento caso a API real envie os dados sem o operador preenchido
+                let nomeOperador = log.operador ? log.operador : 'N/A';
+
+                // CORREÇÃO: Adicionada a tag <td>${nomeOperador}</td> na posição correta
                 newRowsHTML += `
                     <tr class="hover:bg-white/5 transition-colors">
                         <td class="py-4 px-6">${log.data}</td>
                         <td class="py-4 px-6">${log.inicio}</td>
                         <td class="py-4 px-6">${log.fim}</td>
                         <td class="py-4 px-6">${log.tempo}</td>
+                        <td class="py-4 px-6 text-vectra-light">${nomeOperador}</td>
                         <td class="py-4 px-6 font-medium">${statusHtml}</td>
                     </tr>`;
             });
@@ -232,4 +237,4 @@ document.addEventListener("DOMContentLoaded", () => {
         buscarDadosNoServidor(false);
     }, 10000);
 
-}); // <- O FECHAMENTO QUE ESTAVA FALTANDO É ESTE AQUI!
+});
