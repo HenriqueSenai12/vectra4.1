@@ -30,6 +30,29 @@ app.use('/image', express.static(path.join(__dirname, 'image')));
 app.get('/styles.css', (req, res) => res.sendFile(path.join(__dirname, 'styles.css')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
+// ==========================================================
+// FUNÇÃO AUXILIAR DE FORMATAÇÃO DE TEMPO
+// ==========================================================
+/**
+ * Converte segundos em formato string: 00h 00m 00s
+ */
+const formatarTempoComplexo = (totalSegundos) => {
+    if (totalSegundos === null || totalSegundos === undefined) return "--";
+    
+    const hrs = Math.floor(totalSegundos / 3600);
+    const min = Math.floor((totalSegundos % 3600) / 60);
+    const seg = totalSegundos % 60;
+
+    const hDisplay = hrs > 0 ? `${hrs.toString().padStart(2, '0')}h ` : "";
+    const mDisplay = `${min.toString().padStart(2, '0')}m `;
+    const sDisplay = `${seg.toString().padStart(2, '0')}s`;
+    
+    return (hDisplay + mDisplay + sDisplay).trim();
+};
+
+// ==========================================================
+// ROTAS DE USUÁRIOS E SUPORTE
+// ==========================================================
 app.get('/api/test-db', async (req, res) => {
     try {
         const { data, error } = await supabase.from('usuarios').select('nome_completo').limit(1);
@@ -53,9 +76,6 @@ app.post('/api/login', async (req, res) => {
     res.json({ success: true, user: { nome: usuario.nome_completo, funcao: usuario.funcao } });
 });
 
-// ==========================================================
-// ROTAS DE USUÁRIOS E SUPORTE
-// ==========================================================
 app.get('/api/users', async (req, res) => {
     try {
         const { data, error } = await supabase.from('usuarios').select('*').order('id', { ascending: true });
@@ -95,30 +115,12 @@ app.delete('/api/users/:id', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.get('/api/usuarios', async (req, res) => {
-    try {
-        const { data, error } = await supabase.from('usuarios').select('id, nome_completo, email, funcao, data_registro');
-        if (error) throw error;
-        res.json(data);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.post('/api/publicacoes', async (req, res) => {
-    const { titulo, categoria, descricao } = req.body;
-    try {
-        const { data, error } = await supabase.from('publicacoes').insert([{ titulo, categoria, descricao }]).select();
-        if (error) throw error;
-        res.status(201).json({ success: true, data: data[0] });
-    } catch (err) { res.status(400).json({ success: false, error: err.message }); }
-});
-
 // ==========================================================
 // CONTROLE DA ESTEIRA (PLAY / STOP / STATUS)
 // ==========================================================
 
 app.get('/api/esteira/status', async (req, res) => {
     try {
-        // Busca se existe ALGUEM rodando, limitando a 1 para não dar erro
         const { data: logAtivo, error } = await supabase
             .from('logs_operacao')
             .select('*')
@@ -162,39 +164,37 @@ app.post('/api/esteira/play', async (req, res) => {
     }
 });
 
-// 🚀 AQUI ESTÁ A CORREÇÃO PRINCIPAL DO STOP
 app.post('/api/esteira/stop', async (req, res) => {
     try {
-        // 1. Desliga o equipamento
         await supabase.from('equipamentos').update({ status_atual: 'offline' }).eq('id', 1);
 
-        // 2. Busca O ÚLTIMO log aberto (ordenando por data, pegando só 1)
         const { data: logAberto, error: errBusca } = await supabase
             .from('logs_operacao')
             .select('*')
             .eq('status', 'em_andamento')
             .eq('equipamento_id', 1)
-            .order('data_inicio', { ascending: false }) // Pega o mais recente
-            .limit(1) // Garante que pega só um, evitando o erro do maybeSingle
+            .order('data_inicio', { ascending: false })
+            .limit(1)
             .maybeSingle();
 
         if (errBusca) throw errBusca;
 
-        // 3. Se achou um log aberto, fecha ele com a hora atual
         if (logAberto) {
             const dataInicio = new Date(logAberto.data_inicio);
             const dataFim = new Date();
             const duracaoMs = dataFim - dataInicio;
-            const duracaoMinutos = Math.max(1, Math.round(duracaoMs / 60000));
+            
+            // ATUALIZAÇÃO: Agora salvamos o total de SEGUNDOS para precisão total
+            const duracaoSegundos = Math.floor(duracaoMs / 1000);
 
             const { error: errUpdate } = await supabase
                 .from('logs_operacao')
                 .update({ 
                     data_fim: dataFim.toISOString(),
-                    duracao_minutos: duracaoMinutos,
+                    duracao_minutos: duracaoSegundos, // Guardando segundos nesta coluna
                     status: 'finalizado'
                 })
-                .eq('id', logAberto.id); // Atualiza EXATAMENTE este ID
+                .eq('id', logAberto.id);
 
             if (errUpdate) throw errUpdate;
         }
@@ -232,14 +232,16 @@ app.get('/api/monitoramento', async (req, res) => {
             status: {
                 isOnline: eq?.status_atual === 'online',
                 emergencyStops: eq?.paradas_emergencia_count || 0,
-                uptime: `${eq?.uptime_minutos || 0} min`,
+                // Formata o uptime total do equipamento também para o novo padrão
+                uptime: formatarTempoComplexo(eq?.uptime_minutos), 
                 lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString('pt-BR', opcoesHora) : '--'
             },
             logsTabela: logs?.map(l => ({
                 data: new Date(l.data_inicio).toLocaleDateString('pt-BR', opcoesData),
                 inicio: new Date(l.data_inicio).toLocaleTimeString('pt-BR', opcoesHora),
                 fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString('pt-BR', opcoesHora) : 'Rodando...',
-                tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
+                // ATUALIZAÇÃO: Usa a função complexa para exibir HHh MMm SSs
+                tempo: l.duracao_minutos ? formatarTempoComplexo(l.duracao_minutos) : '--',
                 operador: l.usuarios?.nome_completo || 'Sistema', 
                 isNormal: l.tipo_evento !== 'parada_emergencia'
             })) || []
