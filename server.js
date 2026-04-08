@@ -194,36 +194,45 @@ app.post('/api/publicacoes', async (req, res) => {
 
 
 app.get('/api/monitoramento', async (req, res) => {
-  try {
-    const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
-    const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
-    const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(5);
+    try {
+        const { data: eq } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
+        const { data: metricas } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
+        const { data: logs } = await supabase.from('logs_operacao').select('*').order('data_inicio', { descending: true }).limit(5);
 
-    if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
+        // Cálculos para o gráfico de Donut (Exemplo de lógica)
+        const totalLogs = logs?.length || 0;
+        const operando = logs?.filter(l => l.status === 'em_andamento').length || 0;
+        const paradas = eq?.paradas_emergencia_count || 0;
 
-    res.json({
-      graficoLinha: { 
-        ini: metricas?.map(m => m.inicializacoes_count) || [], 
-        pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
-      },
-      status: {
-        isOnline: eq?.status_atual === 'online',
-        emergencyStops: eq?.paradas_emergencia_count || 0,
-        uptime: `${eq?.uptime_minutos || 0} min`,
-        lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString() : '--'
-      },
-      logsTabela: logs?.map(l => ({
-        data: new Date(l.data_inicio).toLocaleDateString(),
-        inicio: new Date(l.data_inicio).toLocaleTimeString(),
-        fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString() : '--',
-        tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
-        isNormal: l.tipo_evento !== 'parada_emergencia'
-      })) || []
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+        res.json({
+            graficoLinha: { 
+                ini: metricas?.map(m => m.inicializacoes_count) || [0,0,0,0,0,0,0], 
+                pe: metricas?.map(m => m.paradas_emergencia_count) || [0,0,0,0,0,0,0] 
+            },
+            graficoBarraHoriz: {
+                ini: metricas?.map(m => m.inicializacoes_count) || [0,0,0,0,0,0,0],
+                pe: metricas?.map(m => m.paradas_emergencia_count) || [0,0,0,0,0,0,0]
+            },
+            [span_0](start_span)graficoRosca: [operando, 5, paradas], // Operando, Manutenção (fixo), Paradas[span_0](end_span)
+            status: {
+                [span_1](start_span)[span_2](start_span)isOnline: eq?.status_atual === 'online',[span_1](end_span)[span_2](end_span)
+                emergencyStops: eq?.paradas_emergencia_count || [span_3](start_span)[span_4](start_span)0,[span_3](end_span)[span_4](end_span)
+                uptime: `${eq?.uptime_minutos || [span_5](start_span)[span_6](start_span)0} min`,[span_5](end_span)[span_6](end_span)
+                [span_7](start_span)[span_8](start_span)lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString() : '--'[span_7](end_span)[span_8](end_span)
+            },
+            logsTabela: logs?.map(l => ({
+                [span_9](start_span)[span_10](start_span)data: new Date(l.data_inicio).toLocaleDateString(),[span_9](end_span)[span_10](end_span)
+                [span_11](start_span)[span_12](start_span)inicio: new Date(l.data_inicio).toLocaleTimeString(),[span_11](end_span)[span_12](end_span)
+                [span_13](start_span)[span_14](start_span)fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString() : 'Rodando...',[span_13](end_span)[span_14](end_span)
+                tempo: l.duracao_minutos ? [span_15](start_span)[span_16](start_span)`${l.duracao_minutos}m` : '--',[span_15](end_span)[span_16](end_span)
+                [span_17](start_span)[span_18](start_span)isNormal: l.tipo_evento !== 'parada_emergencia'[span_17](end_span)[span_18](end_span)
+            })) || []
+        });
+    } catch (err) {
+        [span_19](start_span)[span_20](start_span)res.status(500).json({ error: err.message });[span_19](end_span)[span_20](end_span)
+    }
 });
+
 
 // ==========================================================
 // CONTROLE DA ESTEIRA (PLAY / STOP / STATUS)
@@ -315,38 +324,8 @@ app.post('/api/esteira/stop', async (req, res) => {
 // ==========================================================
 // MONITORAMENTO (ESTATÍSTICAS)
 // ==========================================================
-app.get('/api/monitoramento', async (req, res) => {
-    try {
-        const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
-        const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
-        // Busca os logs, inclusive os que estão "em_andamento" para mostrar na tabela
-        const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(5);
+<script src="../js/painel.js"></script>
 
-        if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
-
-        res.json({
-            graficoLinha: { 
-                ini: metricas?.map(m => m.inicializacoes_count) || [], 
-                pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
-            },
-            status: {
-                isOnline: eq?.status_atual === 'online',
-                emergencyStops: eq?.paradas_emergencia_count || 0,
-                uptime: `${eq?.uptime_minutos || 0} min`,
-                lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString() : '--'
-            },
-            logsTabela: logs?.map(l => ({
-                data: new Date(l.data_inicio).toLocaleDateString(),
-                inicio: new Date(l.data_inicio).toLocaleTimeString(),
-                fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString() : 'Rodando...',
-                tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
-                isNormal: l.tipo_evento !== 'parada_emergencia'
-            })) || []
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
 // Exporta para a Vercel
 module.exports = app;
