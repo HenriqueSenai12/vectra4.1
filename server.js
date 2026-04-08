@@ -52,6 +52,46 @@ app.get('/api/test-db', async (req, res) => {
     }
 });
 
+// ROTA DE LOGIN (Verifica se o usuário existe e a senha bate)
+app.post('/api/login', async (req, res) => {
+    const { email, senha } = req.body;
+
+    try {
+        const { data: usuario, error } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('email', email)
+            .eq('senha', senha) // No futuro, use criptografia!
+            .single();
+
+        if (error || !usuario) {
+            return res.status(401).json({ success: false, message: "E-mail ou senha incorretos" });
+        }
+
+        res.json({ 
+            success: true, 
+            user: { nome: usuario.nome_completo, funcao: usuario.funcao } 
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Erro no servidor" });
+    }
+});
+
+// ROTA PARA LISTAR TODOS OS USUÁRIOS (Para o painel administrativo)
+app.get('/api/usuarios', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .select('id, nome_completo, email, funcao, data_registro');
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 app.get('/api/monitoramento', async (req, res) => {
   try {
     const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
