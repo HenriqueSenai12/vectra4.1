@@ -212,15 +212,23 @@ app.get('/api/esteira/status', async (req, res) => {
 });
 
 // 2. ROTA PLAY: Inicia a operação, atualiza status e REGISTRA O OPERADOR
+// 2. ROTA PLAY: Inicia a operação, busca o ID do usuário e registra o log
 app.post('/api/esteira/play', async (req, res) => {
-    // Recebendo os dados do operador enviados pelo frontend
-    const { nome, email } = req.body;
+    // Recebe o email que enviamos do frontend
+    const { email } = req.body;
 
     try {
         // Atualiza o status na tabela de equipamentos
         await supabase.from('equipamentos').update({ status_atual: 'online', ultima_inicializacao: new Date() }).eq('id', 1);
 
-        // Cria o log de início incluindo quem apertou o play
+        // BUSCA O ID DO USUÁRIO NO BANCO DE DADOS
+        let id_do_usuario = null;
+        if (email) {
+            const { data: userDb } = await supabase.from('usuarios').select('id').eq('email', email).maybeSingle();
+            if (userDb) id_do_usuario = userDb.id;
+        }
+
+        // Cria o log de início usando a coluna usuario_id que existe no seu banco
         const { error } = await supabase
             .from('logs_operacao')
             .insert([{ 
@@ -228,8 +236,7 @@ app.post('/api/esteira/play', async (req, res) => {
                 status: 'em_andamento', 
                 tipo_evento: 'operacao_normal',
                 descricao: 'Iniciado via Painel de Controle',
-                usuario_nome: nome || 'Sistema',
-                usuario_email: email || null
+                usuario_id: id_do_usuario // <-- AGORA SIM! Ligando com a sua tabela
             }]);
 
         if (error) throw error;
@@ -284,26 +291,25 @@ app.post('/api/esteira/stop', async (req, res) => {
 // ==========================================================
 // MONITORAMENTO (ESTATÍSTICAS) - FUSO HORÁRIO E DATA BRASIL
 // ==========================================================
+// ==========================================================
+// MONITORAMENTO (ESTATÍSTICAS) - FUSO HORÁRIO E DATA BRASIL
+// ==========================================================
 app.get('/api/monitoramento', async (req, res) => {
     try {
         const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
         const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
-        const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(10); // Limite de 10 na tabela
+        
+        // A MÁGICA ACONTECE AQUI: O select('*, usuarios(...)') faz o JOIN automático!
+        const { data: logs, error: err3 } = await supabase
+            .from('logs_operacao')
+            .select('*, usuarios(nome_completo, email)') 
+            .order('data_inicio', { ascending: false })
+            .limit(10);
 
         if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
 
-        // Regras para forçar fuso horário de Brasília, modelo 24h e segundos
-        const opcoesHora = { 
-            timeZone: 'America/Sao_Paulo', 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit', 
-            hour12: false // Remove AM/PM
-        };
-        
-        const opcoesData = {
-            timeZone: 'America/Sao_Paulo'
-        };
+        const opcoesHora = { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        const opcoesData = { timeZone: 'America/Sao_Paulo' };
 
         res.json({
             graficoLinha: { 
@@ -321,7 +327,8 @@ app.get('/api/monitoramento', async (req, res) => {
                 inicio: new Date(l.data_inicio).toLocaleTimeString('pt-BR', opcoesHora),
                 fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString('pt-BR', opcoesHora) : 'Rodando...',
                 tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
-                operador: l.usuario_nome || l.usuario_email || 'Sistema',
+                // Pega o nome do usuário que veio do JOIN (ou 'Sistema' se for nulo)
+                operador: l.usuarios?.nome_completo || 'Sistema', 
                 isNormal: l.tipo_evento !== 'parada_emergencia'
             })) || []
         });
@@ -329,6 +336,7 @@ app.get('/api/monitoramento', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // ==========================================================
 // INICIALIZAÇÃO DO SERVIDOR
