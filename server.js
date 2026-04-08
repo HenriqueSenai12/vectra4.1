@@ -1,375 +1,360 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
-const mysql = require('mysql2/promise');
-const multer = require('multer'); 
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const PORT = 3300;
+const PORT = process.env.PORT || 3300;
 
+// ==========================================================
+// CONFIGURAÇÃO ÚNICA DO SUPABASE
+// Prioriza as variáveis da Vercel, se não existirem, usa as fixas
+// ==========================================================
+const supabaseUrl = process.env.SUPABASE_PUBLIC_URL || 'https://ncdviiijzbbqugyiusyq.supabase.co';
+const supabaseKey = process.env.SUPABASE_PUBLIC_KEY || 'sb_publishable_Lwh8-C2Ah3PLP-riPKtq8w_R4oxJgxC';
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error("❌ ERRO: Credenciais do Supabase não encontradas!");
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+
+// ==========================================================
+// ARQUIVOS ESTÁTICOS
+// ==========================================================
+app.use('/frontend', express.static(path.join(__dirname, 'frontend')));
+app.use('/image', express.static(path.join(__dirname, 'image')));
+
+app.get('/styles.css', (req, res) => {
+  res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
+// ==========================================================
+// ROTAS
+// ==========================================================
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend/login.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'vectra_db',
-  port: 3306
-};
+// ROTA DE TESTE DE BANCO (Para você ter certeza)
+app.get('/api/test-db', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('usuarios').select('nome_completo').limit(1);
+        if (error) throw error;
+        res.json({ status: "✅ Conectado ao Supabase!", data });
+    } catch (err) {
+        res.status(500).json({ status: "❌ Erro na conexão", message: err.message });
+    }
+});
+
+// ROTA DE LOGIN (Verifica se o usuário existe e a senha bate)
+app.post('/api/login', async (req, res) => {
+    const { email, senha } = req.body;
+    const { data: usuario, error } = await supabase
+        .from('usuarios')
+        .select('nome_completo, funcao')
+        .eq('email', email)
+        .eq('senha', senha)
+        .maybeSingle();
+
+    if (error || !usuario) {
+        return res.status(401).json({ success: false, message: "Email ou senha incorretos" });
+    }
+
+    res.json({ success: true, user: { nome: usuario.nome_completo, funcao: usuario.funcao } });
+});
 
 // ==========================================================
-// ROTAS DE USUÁRIOS
+// ROTAS DE USUÁRIOS (CRUD - CONNECTADO AO SUPABASE)
 // ==========================================================
 
+// 1. Listar todos os usuários (GET)
 app.get('/api/users', async (req, res) => {
-  let connection;
-  try {
-    connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute('SELECT id, nome_completo as name, email, funcao as role, senha FROM usuarios');
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'DB error' });
-  } finally {
-    if (connection) connection.end();
-  }
-});
+    try {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .select('*')
+            .order('id', { ascending: true }); // Ordena por ID
 
-// Rota para buscar os dados de um ÚNICO usuário logado
-app.get('/api/users/:id', async (req, res) => {
-  const { id } = req.params;
-  let connection;
-  try {
-    connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute('SELECT id, nome_completo, email, funcao, senha FROM usuarios WHERE id = ?', [id]);
-    
-    if (rows.length === 0) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-    res.json(rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'DB error' });
-  } finally {
-    if (connection) connection.end();
-  }
 });
 
+// 2. Criar novo usuário (POST)
 app.post('/api/users', async (req, res) => {
-  const {nome_completo, email, funcao, senha} = req.body;
-  let connection;
-  try {
-    connection = await mysql.createConnection(dbConfig);
-    const [result] = await connection.execute(
-      'INSERT INTO usuarios (nome_completo, email, funcao, senha) VALUES (?, ?, ?, ?)',
-      [nome_completo, email, funcao, senha]
-    );
-    res.json({success: true, id: result.insertId});
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({error: 'DB error'});
-  } finally {
-    if (connection) connection.end();
-  }
+    const { nome_completo, email, funcao, senha } = req.body;
+
+    try {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .insert([{ nome_completo, email, funcao, senha }])
+            .select(); // Retorna o usuário criado
+
+        if (error) throw error;
+        res.status(201).json(data[0]);
+    } catch (err) {
+        // Se o email já existir, o Supabase vai disparar um erro que pegamos aqui
+        res.status(400).json({ error: err.message });
+    }
 });
 
+// 3. Atualizar usuário (PUT)
 app.put('/api/users/:id', async (req, res) => {
-  const { id } = req.params;
-  const { nome_completo, senha } = req.body; 
-  let connection;
-  
-  try {
-    connection = await mysql.createConnection(dbConfig);
-    
-    let query = 'UPDATE usuarios SET nome_completo = ?';
-    let params = [nome_completo];
+    const { id } = req.params;
+    const { nome_completo, funcao, senha } = req.body;
 
+    // Montamos um objeto só com o que vai ser atualizado
+    const updateData = { nome_completo, funcao };
+    
+    // Se a senha foi preenchida, nós a atualizamos. Se veio vazia, ignoramos.
     if (senha) {
-      query += ', senha = ?';
-      params.push(senha);
+        updateData.senha = senha;
     }
 
-    query += ' WHERE id = ?';
-    params.push(id);
+    try {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .update(updateData)
+            .eq('id', id)
+            .select();
 
-    const [result] = await connection.execute(query, params);
-    
-    if (result.affectedRows === 0) {
-        return res.status(404).json({error: 'Usuário não encontrado'});
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
     }
-    
-    res.json({success: true});
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({error: 'DB error'});
-  } finally {
-    if (connection) connection.end();
-  }
 });
 
+// 4. Deletar usuário (DELETE)
 app.delete('/api/users/:id', async (req, res) => {
-  const { id } = req.params;
-  let connection;
-  try {
-    connection = await mysql.createConnection(dbConfig);
-    const [result] = await connection.execute('DELETE FROM usuarios WHERE id = ?', [id]);
-    if (result.affectedRows === 0) return res.status(404).json({error: 'Usuário não encontrado'});
-    res.json({success: true});
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({error: 'DB error'});
-  } finally {
-    if (connection) connection.end();
-  }
-});
+    const { id } = req.params;
 
-
-// ==========================================================
-// ROTA: LIGAR A MÁQUINA (Registra no Dashboard)
-// ==========================================================
-app.post('/api/esteira/play', async (req, res) => {
-    let connection;
     try {
-        connection = await mysql.createConnection(dbConfig);
-        
-        // 1. Muda status para 'online' e salva a hora de inicialização
-        await connection.execute(`UPDATE equipamentos SET status_atual = 'online', ultima_inicializacao = NOW() WHERE id = 1`);
-        
-        // 2. Cria o log de atividade na tabela
-        await connection.execute(`INSERT INTO logs_operacao (equipamento_id, tipo_evento, data_inicio, descricao) VALUES (1, 'inicializacao', NOW(), 'Máquina ligada pelo Painel de Controle')`);
-        
-        // 3. Atualiza o Gráfico de Barras
-        await connection.execute(`
-            INSERT INTO metricas_diarias (equipamento_id, data_registro, inicializacoes_count) 
-            VALUES (1, CURDATE(), 1) 
-            ON DUPLICATE KEY UPDATE inicializacoes_count = inicializacoes_count + 1
-        `);
+        const { error } = await supabase
+            .from('usuarios')
+            .delete()
+            .eq('id', id);
 
-        res.json({ success: true, message: 'Máquina iniciada no sistema.' });
+        if (error) throw error;
+        res.json({ success: true, message: "Usuário deletado com sucesso!" });
     } catch (err) {
-        console.error("Erro no BD (Play):", err);
-        res.status(500).json({ error: 'Erro ao registrar no banco' });
-    } finally {
-        if (connection) connection.end();
+        res.status(400).json({ error: err.message });
     }
 });
 
-// ==========================================================
-// ROTA: PARAR A MÁQUINA (Calcula Uptime e Registra Parada)
-// ==========================================================
-// ==========================================================
-// ROTA: PARAR A MÁQUINA (Calcula Uptime e Registra Parada)
-// ==========================================================
-app.post('/api/esteira/stop', async (req, res) => {
-    let connection;
+
+
+// ROTA PARA LISTAR TODOS OS USUÁRIOS (Para o painel administrativo)
+app.get('/api/usuarios', async (req, res) => {
     try {
-        connection = await mysql.createConnection(dbConfig);
-        
-        // 1. Calcula os SEGUNDOS que a máquina ficou ligada (Uptime)
-        const [rows] = await connection.execute(`SELECT ultima_inicializacao FROM equipamentos WHERE id = 1 AND status_atual = 'online'`);
-        let segundosAtivos = 0;
-        
-        if (rows.length > 0 && rows[0].ultima_inicializacao) {
-            const horaInicio = new Date(rows[0].ultima_inicializacao);
-            const horaAtual = new Date();
-            segundosAtivos = Math.floor((horaAtual - horaInicio) / 1000); 
-            
-            // Trava de segurança para evitar cálculos negativos em caso de fuso horário errado do PC
-            if (segundosAtivos < 0) segundosAtivos = 0; 
-        }
+        const { data, error } = await supabase
+            .from('usuarios')
+            .select('id, nome_completo, email, funcao, data_registro');
 
-        // 2. Muda status para 'offline', soma os segundos de uptime
-        await connection.execute(`
-            UPDATE equipamentos 
-            SET status_atual = 'offline', 
-                uptime_segundos = uptime_segundos + ?, 
-                paradas_emergencia_count = paradas_emergencia_count + 1 
-            WHERE id = 1
-        `, [segundosAtivos]);
-
-        // 3. ATUALIZA O LOG (Dividido em duas etapas para evitar erro de sintaxe do MySQL)
-        // Primeiro busca qual é o ID do log da sessão atual
-        const [openLogs] = await connection.execute(`
-            SELECT id FROM logs_operacao 
-            WHERE equipamento_id = 1 AND data_fim IS NULL 
-            ORDER BY id DESC LIMIT 1
-        `);
-        
-        // Se encontrou um log aberto, atualiza ele
-        if (openLogs.length > 0) {
-            await connection.execute(`
-                UPDATE logs_operacao 
-                SET data_fim = NOW(), 
-                    duracao_segundos = ?
-                WHERE id = ?
-            `, [segundosAtivos, openLogs[0].id]);
-        }
-        
-        // 4. Atualiza os gráficos de Barras e Uptime diário
-        await connection.execute(`
-            INSERT INTO metricas_diarias (equipamento_id, data_registro, paradas_emergencia_count, tempo_operando_segundos) 
-            VALUES (1, CURDATE(), 1, ?) 
-            ON DUPLICATE KEY UPDATE 
-                paradas_emergencia_count = paradas_emergencia_count + 1,
-                tempo_operando_segundos = tempo_operando_segundos + ?
-        `, [segundosAtivos, segundosAtivos]);
-
-        res.json({ success: true, message: 'Máquina parada e log atualizado.' });
+        if (error) throw error;
+        res.json(data);
     } catch (err) {
-        // Log melhorado para mostrar exatamente o que deu erro no terminal
-        console.error("🔴 Erro detalhado no BD (Stop):", err.message); 
-        res.status(500).json({ error: 'Erro ao registrar no banco' });
-    } finally {
-        if (connection) connection.end();
+        res.status(500).json({ error: err.message });
     }
 });
 
-// ==========================================================
-// ROTA: SUPORTE (Registra tickets e manutenções)
-// ==========================================================
-const upload = multer({ dest: 'uploads/' }); 
 
-app.post('/api/publicacoes', upload.single('arquivo'), async (req, res) => {
-    const { titulo, categoria, descricao, usuario_id } = req.body;
-    const arquivo = req.file; 
-    let connection;
-  
+// ==========================================================
+// ROTA DE SUPORTE / PUBLICAÇÕES
+// ==========================================================
+
+app.post('/api/publicacoes', async (req, res) => {
+    const { titulo, categoria, descricao } = req.body;
+
     try {
-        connection = await mysql.createConnection(dbConfig);
-        const caminhoArquivo = arquivo ? arquivo.path : null;
-  
-        // 1. Salva o ticket
-        await connection.execute(
-            'INSERT INTO publicacoes (titulo, categoria, descricao, usuario_id, caminho_arquivo) VALUES (?, ?, ?, ?, ?)',
-            [titulo, categoria, descricao, usuario_id || null, caminhoArquivo]
-        );
-  
-        // 2. Se a categoria for manutenção, atualiza os gráficos do Dashboard!
-        if (categoria === 'manutencao' || categoria === 'Manutenção') { 
-            
-            await connection.execute(
-                `INSERT INTO logs_operacao (equipamento_id, usuario_id, tipo_evento, data_inicio, descricao) VALUES (1, ?, 'manutencao', NOW(), ?)`, 
-                [usuario_id || null, `Ticket Suporte: ${titulo}`]
-            );
-            
-            // 👇 Adiciona 3600 segundos (1 hora) ao gráfico de manutenção
-            await connection.execute(`
-                INSERT INTO metricas_diarias (equipamento_id, data_registro, tempo_manutencao_segundos) 
-                VALUES (1, CURDATE(), 3600) 
-                ON DUPLICATE KEY UPDATE tempo_manutencao_segundos = tempo_manutencao_segundos + 3600
-            `);
-        }
-  
-        res.json({ success: true, message: 'Publicação registrada!' });
+        const { data, error } = await supabase
+            .from('publicacoes')
+            .insert([{ 
+                titulo: titulo, 
+                categoria: categoria, 
+                descricao: descricao 
+            }])
+            .select();
+
+        if (error) throw error;
+        res.status(201).json({ success: true, data: data[0] });
     } catch (err) {
-        console.error("Erro BD (Suporte):", err);
-        res.status(500).json({ error: 'Erro ao salvar publicação' });
-    } finally {
-        if (connection) connection.end();
+        console.error(err);
+        res.status(400).json({ success: false, error: err.message });
     }
 });
 
-// ==========================================================
-// ROTA: MONITORAMENTO (Busca dados para o Dashboard)
-// ==========================================================
+
 app.get('/api/monitoramento', async (req, res) => {
-  let connection;
-  
   try {
-    connection = await mysql.createConnection(dbConfig);
+    const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
+    const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
+    const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(5);
 
-    const [metricas] = await connection.execute(
-      'SELECT inicializacoes_count, paradas_emergencia_count, tempo_operando_segundos, tempo_manutencao_segundos FROM metricas_diarias ORDER BY data_registro ASC LIMIT 7'
-    );
-
-    const arrayIni = metricas.map(m => m.inicializacoes_count);
-    const arrayPe = metricas.map(m => m.paradas_emergencia_count);
-
-    // Soma total em Segundos
-    const totalOperandoSeg = metricas.reduce((acc, curr) => acc + Number(curr.tempo_operando_segundos), 0);
-    const totalManutencaoSeg = metricas.reduce((acc, curr) => acc + Number(curr.tempo_manutencao_segundos), 0);
-    const totalParadas = metricas.reduce((acc, curr) => acc + Number(curr.paradas_emergencia_count), 0);
-
-    const [equipamento] = await connection.execute(
-      'SELECT status_atual, ultima_inicializacao, uptime_segundos, paradas_emergencia_count FROM equipamentos WHERE id = 1'
-    );
-    const eq = equipamento[0] || {};
-    
-    // 👇 Calcula o tempo real se a máquina estiver ligada neste momento
-    let totalSegundosUptime = eq.uptime_segundos || 0;
-    if (eq.status_atual === 'online' && eq.ultima_inicializacao) {
-        const agora = new Date();
-        const inicio = new Date(eq.ultima_inicializacao);
-        const segundosRodandoAgora = Math.floor((agora - inicio) / 1000);
-        totalSegundosUptime += segundosRodandoAgora;
-    }
-
-    // Formata o uptime total de segundos para Horas, Minutos e Segundos
-    const horasUptime = Math.floor(totalSegundosUptime / 3600);
-    const minutosUptime = Math.floor((totalSegundosUptime % 3600) / 60);
-    const segundosUptime = totalSegundosUptime % 60;
-
-    // 👇 Adicionado %s para buscar os segundos no MySQL
-    const [logs] = await connection.execute(
-      'SELECT tipo_evento, DATE_FORMAT(data_inicio, "%d/%m/%Y") as data_formatada, DATE_FORMAT(data_inicio, "%H:%i:%s") as hora_inicio, DATE_FORMAT(data_fim, "%H:%i:%s") as hora_fim, duracao_segundos FROM logs_operacao ORDER BY data_inicio DESC LIMIT 5'
-    );
-
-    const logsFormatados = logs.map(log => {
-      let tempoFormatado = '--';
-      
-      // Converte duração em segundos para HH:MM:SS
-      if (log.duracao_segundos !== null) {
-          const h = Math.floor(log.duracao_segundos / 3600);
-          const m = Math.floor((log.duracao_segundos % 3600) / 60);
-          const s = log.duracao_segundos % 60;
-          
-          if (h > 0) {
-              tempoFormatado = `${h}h ${m}m ${s}s`;
-          } else if (m > 0) {
-              tempoFormatado = `${m}m ${s}s`;
-          } else {
-              tempoFormatado = `${s}s`;
-          }
-      }
-
-      return {
-        data: log.data_formatada,
-        inicio: log.hora_inicio,
-        fim: log.hora_fim || '--:--:--',
-        tempo: tempoFormatado,
-        isNormal: log.tipo_evento !== 'parada_emergencia' 
-      };
-    });
+    if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
 
     res.json({
-        graficoLinha: { ini: arrayIni, pe: arrayPe },
-        graficoBarra: { ini: arrayIni, pe: arrayPe },
-        graficoBarraHoriz: { ini: arrayIni, pe: arrayPe },
-        // Divide por 60 para o gráfico de rosca continuar equilibrado e não ser engolido pelos segundos
-        graficoRosca: [Math.floor(totalOperandoSeg / 60), Math.floor(totalManutencaoSeg / 60), totalParadas],
-        status: {
-            isOnline: eq.status_atual === 'online',
-            emergencyStops: eq.paradas_emergencia_count || 0,
-            uptime: `${horasUptime}h ${minutosUptime}m ${segundosUptime}s`, // 👈 Mostra os Segundos
-            lastBoot: eq.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : '--'
-        },
-        logsTabela: logsFormatados
+      graficoLinha: { 
+        ini: metricas?.map(m => m.inicializacoes_count) || [], 
+        pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
+      },
+      status: {
+        isOnline: eq?.status_atual === 'online',
+        emergencyStops: eq?.paradas_emergencia_count || 0,
+        uptime: `${eq?.uptime_minutos || 0} min`,
+        lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString() : '--'
+      },
+      logsTabela: logs?.map(l => ({
+        data: new Date(l.data_inicio).toLocaleDateString(),
+        inicio: new Date(l.data_inicio).toLocaleTimeString(),
+        fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString() : '--',
+        tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
+        isNormal: l.tipo_evento !== 'parada_emergencia'
+      })) || []
     });
-
   } catch (err) {
-    console.error("Erro na rota de monitoramento:", err);
-    res.status(500).json({ error: 'Erro ao buscar dados do monitoramento no banco de dados' });
-  } finally {
-    if (connection) connection.end();
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server on http://localhost:${PORT}`);
+// ==========================================================
+// CONTROLE DA ESTEIRA (PLAY / STOP / STATUS)
+// ==========================================================
+
+// 1. ROTA DE STATUS: Verifica se a máquina está ligada ao carregar a página
+app.get('/api/esteira/status', async (req, res) => {
+    try {
+        const { data: logAtivo, error } = await supabase
+            .from('logs_operacao')
+            .select('*')
+            .eq('status', 'em_andamento')
+            .eq('equipamento_id', 1)
+            .maybeSingle();
+
+        if (error) throw error;
+        // Retorna true se houver um log "em_andamento"
+        res.json({ ligado: !!logAtivo });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
+
+// 2. ROTA PLAY: Inicia a operação e atualiza o status do equipamento
+app.post('/api/esteira/play', async (req, res) => {
+    try {
+        // Atualiza o status na tabela de equipamentos
+        await supabase.from('equipamentos').update({ status_atual: 'online', ultima_inicializacao: new Date() }).eq('id', 1);
+
+        // Cria o log de início
+        const { error } = await supabase
+            .from('logs_operacao')
+            .insert([{ 
+                equipamento_id: 1, 
+                status: 'em_andamento', 
+                tipo_evento: 'operacao_normal',
+                descricao: 'Iniciado via Painel de Controle'
+            }]);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3. ROTA STOP: Finaliza, calcula a duração e atualiza o equipamento
+app.post('/api/esteira/stop', async (req, res) => {
+    try {
+        // Atualiza status do equipamento
+        await supabase.from('equipamentos').update({ status_atual: 'offline' }).eq('id', 1);
+
+        // Busca o log que estava aberto
+        const { data: logAberto, error: errBusca } = await supabase
+            .from('logs_operacao')
+            .select('*')
+            .eq('status', 'em_andamento')
+            .eq('equipamento_id', 1)
+            .maybeSingle();
+
+        if (errBusca) throw errBusca;
+
+        if (logAberto) {
+            const dataInicio = new Date(logAberto.data_inicio);
+            const dataFim = new Date();
+            // Calcula duração em minutos
+            const duracaoMs = dataFim - dataInicio;
+            const duracaoMinutos = Math.max(1, Math.round(duracaoMs / 60000));
+
+            // Atualiza o log para finalizado
+            const { error: errUpdate } = await supabase
+                .from('logs_operacao')
+                .update({ 
+                    data_fim: dataFim.toISOString(),
+                    duracao_minutos: duracaoMinutos,
+                    status: 'finalizado'
+                })
+                .eq('id', logAberto.id);
+
+            if (errUpdate) throw errUpdate;
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================================
+// MONITORAMENTO (ESTATÍSTICAS)
+// ==========================================================
+app.get('/api/monitoramento', async (req, res) => {
+    try {
+        const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
+        const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
+        // Busca os logs, inclusive os que estão "em_andamento" para mostrar na tabela
+        const { data: logs, error: err3 } = await supabase.from('logs_operacao').select('*').order('data_inicio', { ascending: false }).limit(5);
+
+        if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
+
+        res.json({
+            graficoLinha: { 
+                ini: metricas?.map(m => m.inicializacoes_count) || [], 
+                pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
+            },
+            status: {
+                isOnline: eq?.status_atual === 'online',
+                emergencyStops: eq?.paradas_emergencia_count || 0,
+                uptime: `${eq?.uptime_minutos || 0} min`,
+                lastBoot: eq?.ultima_inicializacao ? new Date(eq.ultima_inicializacao).toLocaleTimeString() : '--'
+            },
+            logsTabela: logs?.map(l => ({
+                data: new Date(l.data_inicio).toLocaleDateString(),
+                inicio: new Date(l.data_inicio).toLocaleTimeString(),
+                fim: l.data_fim ? new Date(l.data_fim).toLocaleTimeString() : 'Rodando...',
+                tempo: l.duracao_minutos ? `${l.duracao_minutos}m` : '--',
+                isNormal: l.tipo_evento !== 'parada_emergencia'
+            })) || []
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Exporta para a Vercel
+module.exports = app;
+
+
+// Exporta para a Vercel
+module.exports = app;
+
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => console.log(`Rodando em http://localhost:${PORT}`));
+}

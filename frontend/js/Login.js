@@ -40,44 +40,47 @@ document.addEventListener('DOMContentLoaded', () => {
       loginBtn.innerHTML = 'Aguarde...';
       loginBtn.style.pointerEvents = 'none';
 
-      try {
-        const usersResponse = await fetch('/api/users');
-        const users = await usersResponse.json();
-        const user = users.find(u => u.email === email && u.senha === senha);
-        
-        if (user) {
-          // Descobre qual é a função do usuário (admin ou operador)
-          const userRole = (user.role || user.funcao).toLowerCase();
+            try {
+        // 1. Envia os dados para a rota de login que criamos no servidor
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha })
+        });
 
-          // Salva os dados no localStorage
+        const result = await response.json();
+
+        if (result.success) {
+          const user = result.user; // O servidor já devolve o usuário certo
+
+          // 2. Salva os dados no localStorage para usar nas outras telas
           localStorage.setItem('vectraUser', JSON.stringify({ 
-            id: user.id, 
-            nome_completo: user.name || user.nome_completo, 
-            funcao: userRole 
+            nome: user.nome, 
+            funcao: user.funcao 
           }));
 
-          // CONDIÇÃO DE REDIRECIONAMENTO
-          if (userRole === 'admin') {
-            window.location.href = './tela_admin/painel_principal.html';
-          } else if (userRole === 'operador') {
-            window.location.href = './tela_operador/painel_principal.html';
-          } else {
-            window.location.href = './tela_principal/painel_principal.html';
-          }
+// O CAMINHO CORRETO PARA A VERCEL
+if (user.funcao === 'admin') {
+    window.location.href = '/frontend/tela_admin/painel_principal.html';
+} else {
+    window.location.href = '/frontend/tela_operador/painel_principal.html';
+}
+
 
         } else {
-          alert('Credenciais inválidas');
-          // Restaura o botão
+          // Se o servidor responder que os dados estão errados
+          alert(result.message || 'Credenciais inválidas');
           loginBtn.innerHTML = textoOriginal;
           loginBtn.style.pointerEvents = 'auto';
         }
       } catch (err) {
+        // Esse erro acontece se o servidor (Vercel) estiver fora do ar ou com erro 500
         alert('Erro de conexão com o servidor');
         console.error(err);
-        // Restaura o botão
         loginBtn.innerHTML = textoOriginal;
         loginBtn.style.pointerEvents = 'auto';
       }
+
     });
   }
 });

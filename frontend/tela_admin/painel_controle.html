@@ -7,9 +7,8 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <link rel="stylesheet" href="painel_principal.css">
     
     <script>
@@ -30,11 +29,9 @@
     </script>
 </head>
 
-<body class="font-sans antialiased text-white transition-colors duration-300">
+<body class="font-sans antialiased text-white overflow-x-hidden">
     
-    <div id="aurora-container">
-        <div class="aurora-extra"></div>
-    </div>
+    <div id="aurora-container"></div>
 
     <div class="relative z-10 flex h-screen w-screen overflow-hidden">
         
@@ -47,7 +44,7 @@
             </div>
 
             <nav class="flex-1 py-6 flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden no-scrollbar">
-                <a href="painel_principal.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                <a href="#" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
                     <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <i class="ph ph-house text-2xl min-w-[24px]"></i>
                     <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Home</span>
@@ -64,7 +61,7 @@
                     <i class="ph ph-users text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
                     <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Usuários</span>
                 </a>
-
+                
                 <a href="painel_config.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
                     <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <i class="ph ph-gear text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
@@ -81,7 +78,7 @@
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col h-full w-full transition-all duration-300 overflow-y-auto">
+        <main class="flex-1 flex flex-col h-full w-full overflow-y-auto">
             
             <header class="h-20 bg-[#0E1F35]/50 backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.2)] flex items-center justify-between px-8 z-10 sticky top-0 border-b border-white/10">
                 <div class="flex items-center gap-4">
@@ -99,112 +96,151 @@
                         <i class="ph ph-bell text-2xl"></i>
                         <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-vectra-base"></span>
                     </button>
-
+                    
                     <img id="userAvatarHeader" src="https://ui-avatars.com/api/?name=Operador+Vectra&background=1E3A5F&color=fff" alt="Avatar" class="w-10 h-10 rounded-full border border-white/20 cursor-pointer user-avatar-header">
                 </div>
             </header>
             
-            <div class="bg-[#152036]/80 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl flex flex-col p-8 card-animado max-w-4xl mx-auto w-full mt-10">
-                <div class="flex flex-col sm:flex-row justify-between items-center border-b border-white/10 pb-6 mb-8 gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white flex items-center gap-3">
-                            <i class="ph ph-cpu text-vectra-light text-3xl"></i>
-                            Controle Operacional
-                        </h2>
-                        <p class="text-slate-400 text-sm mt-1">Controle direto de processos e acionamento do CLP.</p>
-                    </div>
-
-                    <div class="bg-[#0B1120] border border-white/10 rounded-xl px-6 py-3 flex items-center gap-4 min-w-[250px] shadow-inner">
-                        <div class="relative flex h-4 w-4">
-                            <span id="status-ping" class="absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75 hidden"></span>
-                            <span id="status-dot" class="relative inline-flex rounded-full h-4 w-4 bg-slate-500"></span>
-                        </div>
+            <div class="flex-1 p-6 flex items-start justify-center">
+                <div class="bg-[#152036]/80 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl flex flex-col p-8 card-animado max-w-4xl mx-auto w-full mt-4">
+                    
+                    <div class="flex flex-col sm:flex-row justify-between items-center border-b border-white/10 pb-6 mb-8 gap-4">
                         <div>
-                            <span class="block text-xs text-slate-500 font-semibold uppercase tracking-wider">Status do Sistema</span>
-                            <span id="status-text" class="block text-slate-300 font-mono font-bold text-lg">DESLIGADO</span>
+                            <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                                <i class="ph ph-cpu text-vectra-light text-3xl"></i>
+                                Vectra Core Unit 01
+                            </h2>
+                            <p class="text-slate-400 text-sm mt-1">Acionamento do CLP e registro de logs automáticos.</p>
+                        </div>
+
+                        <div class="bg-[#0B1120] border border-white/10 rounded-xl px-6 py-3 flex items-center gap-4 min-w-[250px] shadow-inner">
+                            <div class="relative flex h-4 w-4">
+                                <span id="status-ping" class="absolute inline-flex h-full w-full rounded-full opacity-75 hidden"></span>
+                                <span id="status-dot" class="relative inline-flex rounded-full h-4 w-4 bg-red-500"></span>
+                            </div>
+                            <div>
+                                <span class="block text-xs text-slate-500 font-semibold uppercase tracking-wider">Status do Sistema</span>
+                                <span id="status-text" class="block text-red-500 font-mono font-bold text-lg">DESLIGADO</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex flex-wrap justify-center gap-6 sm:gap-10 py-4">
-                    <button id="btn-play" class="group relative flex flex-col items-center justify-center w-36 h-36 sm:w-48 sm:h-48 bg-[#0B1120] border border-emerald-500/20 rounded-2xl hover:bg-emerald-500/10 hover:border-emerald-500 transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.05)] hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-                        <div class="absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
-                        <i class="ph-fill ph-play-circle text-6xl sm:text-7xl text-emerald-500 mb-2 group-hover:scale-110 transition-transform duration-300"></i>
-                        <span class="text-emerald-500 font-bold tracking-widest text-sm sm:text-base">INICIAR</span>
-                    </button>
+                    <div class="flex flex-wrap justify-center gap-6 sm:gap-10 py-4">
+                        <button id="btn-play" class="group relative flex flex-col items-center justify-center w-36 h-36 sm:w-48 sm:h-48 bg-[#0B1120] border border-emerald-500/20 rounded-2xl hover:bg-emerald-500/10 hover:border-emerald-500 transition-all duration-300">
+                            <i class="ph-fill ph-play-circle text-6xl sm:text-7xl text-emerald-500 mb-2 group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="text-emerald-500 font-bold tracking-widest text-sm sm:text-base">INICIAR</span>
+                        </button>
 
-                    <button id="btn-stop" class="group relative flex flex-col items-center justify-center w-36 h-36 sm:w-48 sm:h-48 bg-[#0B1120] border border-red-500/20 rounded-2xl hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 shadow-[0_0_15px_rgba(239,68,68,0.05)] hover:shadow-[0_0_30px_rgba(239,68,68,0.3)] hover:animate-pulse">
-                        <div class="absolute inset-0 bg-gradient-to-t from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
-                        <i class="ph-fill ph-power text-6xl sm:text-7xl text-red-500 mb-2 group-hover:scale-110 transition-transform duration-300"></i>
-                        <span class="text-red-500 font-bold tracking-widest text-sm sm:text-base">DESLIGAR</span>
-                    </button>
+                        <button id="btn-stop" class="group relative flex flex-col items-center justify-center w-36 h-36 sm:w-48 sm:h-48 bg-[#0B1120] border border-red-500/20 rounded-2xl hover:bg-red-500/10 hover:border-red-500 transition-all duration-300">
+                            <i class="ph-fill ph-power text-6xl sm:text-7xl text-red-500 mb-2 group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="text-red-500 font-bold tracking-widest text-sm sm:text-base">DESLIGAR</span>
+                        </button>
+                    </div>
+
                 </div>
             </div>
             
         </main>
     </div> 
-
-    <script src="../../backend/painel.js"></script>
+    
+    <script src="../js/painel.js"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Sidebar Animação
+            const menuBtn = document.getElementById('menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarTexts = document.querySelectorAll('.sidebar-text');
+            
+            let isCollapsed = false;
+            if (menuBtn && sidebar) {
+                menuBtn.addEventListener('click', () => {
+                    isCollapsed = !isCollapsed;
+                    if (isCollapsed) {
+                        sidebar.classList.add('is-collapsed');
+                        gsap.to(sidebarTexts, { 
+                            opacity: 0, x: -10, duration: 0.2, stagger: 0.02, ease: "power1.inOut", 
+                            onComplete: () => sidebarTexts.forEach(t => t.style.display = 'none') 
+                        });
+                        gsap.to(sidebar, { width: "80px", duration: 0.4, ease: "power2.inOut", delay: 0.1 });
+                    } else {
+                        sidebar.classList.remove('is-collapsed');
+                        sidebarTexts.forEach(t => t.style.display = '');
+                        gsap.to(sidebar, { width: "16rem", duration: 0.4, ease: "power2.inOut" });
+                        gsap.to(sidebarTexts, { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power2.out", delay: 0.2 });
+                    }
+                });
+            }
+            // Lógica dos Botões da Esteira 
             const btnPlay = document.getElementById('btn-play');
             const btnStop = document.getElementById('btn-stop');
-            
             const statusText = document.getElementById('status-text');
             const statusDot = document.getElementById('status-dot');
             const statusPing = document.getElementById('status-ping');
 
-            function updateStatus(state, colorClass, pingColorClass) {
-                statusText.innerText = state;
-                statusText.className = `block font-mono font-bold text-lg ${colorClass}`;
-                statusDot.className = `relative inline-flex rounded-full h-4 w-4 ${colorClass.replace('text-', 'bg-')}`;
-                
-                if(pingColorClass) {
-                    statusPing.className = `animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${pingColorClass}`;
+            /**
+             * Atualiza visualmente os indicadores de status na tela
+             */
+            function updateStatusUI(isOperating) {
+                if (isOperating) {
+                    statusText.innerText = 'EM OPERAÇÃO';
+                    statusText.className = "block font-mono font-bold text-lg text-emerald-500";
+                    statusDot.className = "relative inline-flex rounded-full h-4 w-4 bg-emerald-500";
+                    statusPing.className = "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-emerald-400";
                     statusPing.style.display = 'block';
                 } else {
+                    statusText.innerText = 'DESLIGADO';
+                    statusText.className = "block font-mono font-bold text-lg text-red-500";
+                    statusDot.className = "relative inline-flex rounded-full h-4 w-4 bg-red-500";
                     statusPing.style.display = 'none';
                 }
             }
 
-            async function mandarComandoParaMaquina(comando, estadoTela, cor, corPing = '') {
+            /**
+             * Envia comandos de Play/Stop para o servidor
+             */
+            async function mandarComando(comando) {
                 try {
-                    updateStatus('REGISTRANDO...', 'text-slate-400', '');
+                    // Feedback visual imediato de "processando"
+                    statusText.innerText = 'PROCESSANDO...';
                     
-                    // Envia requisição POST para o seu servidor
-                    const resposta = await fetch(`http://localhost:3300/api/esteira/${comando}`, {
+                    const resposta = await fetch(`/api/esteira/${comando}`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
+                        headers: { 'Content-Type': 'application/json' }
                     });
                     
                     if (resposta.ok) {
-                        updateStatus(estadoTela, cor, corPing);
+                        updateStatusUI(comando === 'play');
                     } else {
-                        updateStatus('ERRO NO COMANDO', 'text-red-500', '');
+                        console.error("Erro na resposta do servidor");
+                        checkInitialStatus(); // Restaura status real em caso de erro
                     }
                 } catch (erro) {
-                    console.error('Erro de conexão com o servidor:', erro);
-                    updateStatus('SERVIDOR OFFLINE', 'text-red-500', '');
+                    console.error('Erro de conexão:', erro);
+                    statusText.innerText = 'ERRO DE CONEXÃO';
                 }
             }
 
-            // Atualizando os ouvintes dos botões:
-            if(btnPlay) {
-                btnPlay.addEventListener('click', () => {
-                    mandarComandoParaMaquina('play', 'EM OPERAÇÃO', 'text-emerald-500', 'bg-emerald-400');
-                });
+            /**
+             * Verifica o estado atual no banco de dados (Persistência)
+             */
+            async function checkInitialStatus() {
+                try {
+                    const res = await fetch('/api/esteira/status');
+                    const data = await res.json();
+                    updateStatusUI(data.ligado);
+                } catch (e) {
+                    console.error("Não foi possível recuperar o status inicial.");
+                }
             }
 
-            if(btnStop) {
-                btnStop.addEventListener('click', () => {
-                    mandarComandoParaMaquina('stop', 'DESLIGADO', 'text-red-500', '');
-                });
-            }
+            // Listeners de Clique
+            if (btnPlay) btnPlay.addEventListener('click', () => mandarComando('play'));
+            if (btnStop) btnStop.addEventListener('click', () => mandarComando('stop'));
 
-        }); // <-- ESSA É A CHAVE E PARÊNTESE QUE ESTAVAM FALTANDO!
+            // Executa ao carregar a página para manter o estado
+            checkInitialStatus();
+        });
     </script>
 </body>
 </html>

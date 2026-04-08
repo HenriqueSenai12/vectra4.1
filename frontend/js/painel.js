@@ -1,70 +1,48 @@
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // 1. Puxa a quantidade de manutenções salvas no formulário
-    let totalManutencao = parseInt(localStorage.getItem('count_manutencao') || '0');
-    
-    // (Opcional) Puxar outras categorias se você quiser colocar no gráfico depois
-    // let totalInstalacao = parseInt(localStorage.getItem('count_instalacao') || '0');
-
-    console.log("Total de manutenções para o gráfico: ", totalManutencao);
-
-    // 2. Aqui você configura o seu gráfico usando a variável totalManutencao
-    // Exemplo fictício se você usar Chart.js:
-    /*
-    const ctx = document.getElementById('meuGraficoDeRosca').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Manutenção', 'Outros'],
-            datasets: [{
-                data: [totalManutencao, 5], // <--- A variável entra aqui!
-                backgroundColor: ['#4FA3FF', '#152036']
-            }]
-        }
-    });
-    */
-});
-
-
-document.addEventListener('DOMContentLoaded', () => {
     // 1. CARREGAR DADOS E VERIFICAR LOGIN
-    const storedUser = JSON.parse(localStorage.getItem('vectraUser'));
+    const userString = localStorage.getItem('vectraUser');
+    const storedUser = userString ? JSON.parse(userString) : null;
 
-    if (!storedUser || !storedUser.nome_completo) {
-        window.location.href = '../login.html'; 
+    // CORRIGIDO: Agora ele verifica storedUser.nome
+    if (!storedUser || !storedUser.nome) {
+        // Se a sua tela de login se chama index.html e está na pasta raiz, o caminho absoluto é mais seguro:
+        window.location.href = '/'; 
         return; 
     }
 
-    // 2. ATUALIZAR SAUDAÇÃO E NOME (Só vai executar se a tela tiver esse título)
-    const greetingElement = document.querySelector('header h1.text-2xl');
-    if (greetingElement && greetingElement.textContent.includes('Operador')) {
+    // 2. ATUALIZAR SAUDAÇÃO E NOME
+    const greetingElement = document.querySelector('header h1');
+    if (greetingElement) {
         const horaAtual = new Date().getHours();
         let saudacao = 'Bom dia';
         if (horaAtual >= 12 && horaAtual < 18) saudacao = 'Boa tarde';
         else if (horaAtual >= 18) saudacao = 'Boa noite';
 
-        const primeiroNome = storedUser.nome_completo.split(' ')[0];
+        // CORRIGIDO: Usa storedUser.nome
+        const primeiroNome = storedUser.nome.split(' ')[0];
+        // Atualiza o texto inteiro para todos (Administrador ou Operador)
         greetingElement.textContent = `${saudacao}, ${primeiroNome}!`;
     }
 
     // 3. ATUALIZAR AVATAR EM QUALQUER TELA
     const userAvatarHeader = document.getElementById('userAvatarHeader') || document.getElementById('user-avatar');
     if (userAvatarHeader) {
-        userAvatarHeader.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(storedUser.nome_completo)}&background=4FA3FF&color=fff&bold=true`;
+        // CORRIGIDO: Usa storedUser.nome
+        userAvatarHeader.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(storedUser.nome)}&background=4FA3FF&color=fff&bold=true`;
         const cargoTexto = storedUser.funcao === 'admin' ? 'Administrador' : 'Operador';
         userAvatarHeader.title = cargoTexto;
     }
 
     // 4. LÓGICA DE LOGOUT
-    // Procura qualquer link que vá para a tela de login para funcionar como botão de sair
-    const botoesSair = document.querySelectorAll('a[href*="login.html"]'); 
+    // Procura qualquer link que vá para a tela de login (ou index)
+    const botoesSair = document.querySelectorAll('.sidebar-item[href*="login"], .sidebar-item[href*="index"]'); 
     botoesSair.forEach(btn => {
         btn.addEventListener('click', () => {
             localStorage.removeItem('vectraUser');
         });
     });
 
-    // 5. ANIMAÇÃO DO MENU LATERAL
+    // 5. ANIMAÇÃO DO MENU LATERAL (MANTIDO)
     const menuBtn = document.getElementById('menu-btn');
     const sidebar = document.getElementById('sidebar');
     const sidebarTexts = document.querySelectorAll('.sidebar-text');
