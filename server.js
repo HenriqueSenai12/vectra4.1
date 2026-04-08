@@ -80,6 +80,30 @@ app.get('/api/monitoramento', async (req, res) => {
   }
 });
 
+const { createClient } = require('@supabase/supabase-js');
+
+const supabaseUrl = process.env.SUPABASE_PUBLIC_URL;
+const supabaseKey = process.env.SUPABASE_PUBLIC_KEY;
+
+// Verifica se as variáveis foram carregadas
+if (!supabaseUrl || !supabaseKey) {
+    console.error("❌ ERRO: Variáveis de ambiente do Supabase não encontradas!");
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// ROTA DE TESTE DE BANCO
+app.get('/api/test-db', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('usuarios').select('nome_completo').limit(1);
+        if (error) throw error;
+        res.json({ status: "Conectado", data });
+    } catch (err) {
+        res.status(500).json({ status: "Erro", message: err.message });
+    }
+});
+
+
 // Exporta para a Vercel
 module.exports = app;
 
