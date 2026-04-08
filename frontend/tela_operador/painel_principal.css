@@ -147,58 +147,117 @@ body {
 /* ==========================================================================
    6. RESPONSIVIDADE (MOBILE / TABLETS PEQUENOS)
    ========================================================================== */
+/* ==========================================================================
+   6. RESPONSIVIDADE (MOBILE / TABLETS PEQUENOS)
+   ========================================================================== */
+/* ==========================================================================
+   6. RESPONSIVIDADE (MOBILE - ESTILO APP / BOTTOM BAR)
+   ========================================================================== */
 @media (max-width: 768px) {
     
-    /* 1. Previne que a página passe do limite da tela horizontalmente no mobile */
+    /* 1. Ajuste do Corpo da Página */
     body {
         overflow-x: hidden;
         overflow-y: auto;
+        padding-bottom: 90px !important; /* Espaço no final da página para a barra não cobrir o conteúdo */
     }
 
-    /* 2. Ajuste de Performance da Aurora no Mobile (Evita lag no Chrome/Brave) */
+    /* Ajuste de Performance da Aurora */
     #aurora-container::before, #aurora-container::after {
         width: 80vw;
         height: 80vh;
-        filter: blur(100px); /* Reduzido levemente o blur para não engasgar CPUs de celular */
+        filter: blur(100px); 
     }
 
-    /* 3. Ajuste Crítico: Logo da Vectra 
-       Removemos os margins negativos fixos que quebram o layout no celular */
-    .container-logo {
-        justify-content: flex-start;
-        gap: 12px;
-    }
-
-    .container-logo img {
-        right: 0;
-        height: 45px; /* Deixa a logo menor e proporcional */
-    }
-
-    .container-logo span {
-        margin-left: 0;
-        font-size: 18px;
-    }
-
-    /* 4. Menu Lateral Flutuante (Overlayer)
-       No mobile, o menu deve ficar por cima do conteúdo, e não espremer a tela principal */
+    /* 2. TRANSFORMAR O SIDEBAR EM UMA BOTTOM BAR (Barra Inferior) */
     #sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        z-index: 100;
-        height: 100%;
-        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        top: auto !important; /* Remove qualquer alinhamento no topo */
+        width: 100% !important;
+        height: 75px !important;
+        border-right: none !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background: rgba(14, 31, 53, 0.85) !important; /* Fundo semitransparente como no print */
+        backdrop-filter: blur(16px) !important;
+        z-index: 100 !important;
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        transform: translateX(0) !important; 
+        opacity: 1 !important;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.4) !important;
     }
 
-    /* Oculta completamente o menu lateral quando estiver recolhido no celular */
-    #sidebar.is-collapsed, #sidebar.collapsed {
-        transform: translateX(-100%) !important; /* Joga pra fora da tela em vez de encolher */
-        width: 0 !important;
-        opacity: 0;
+    /* 3. LIMPANDO O MENU (Ocultando Logo e Botão de Sair na Bottom Bar) */
+    #sidebar > div:first-child,  /* Esconde a div da Logo dentro do menu */
+    #sidebar > div:last-child {  /* Esconde a div de Logout no rodapé do menu */
+        display: none !important;
     }
 
-    /* 5. Ajuste de Delay das Animações
-       Em telas móveis, todos os cards devem carregar juntos para evitar longas esperas ao rolar a tela */
+    /* 4. ALINHAMENTO DOS ÍCONES (HORIZONTAL) */
+    #sidebar nav {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        width: 100% !important;
+        height: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+
+    /* Formatando os botões individuais */
+    .sidebar-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 60px !important;
+        height: 60px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        border-radius: 50% !important; /* Fica redondinho se tiver hover */
+    }
+
+    /* Esconde os textos do menu no celular */
+    .sidebar-text {
+        display: none !important; 
+    }
+
+    /* Aumenta os ícones no celular */
+    .sidebar-item i {
+        font-size: 26px !important;
+        margin: 0 !important;
+    }
+
+    /* 5. ESTILO DO ITEM ATIVO (Efeito Neon) */
+    .sidebar-item.active {
+        background-color: transparent !important;
+    }
+    
+    .sidebar-item.active i {
+        color: #4FA3FF !important;
+        transform: scale(1.15) translateY(-2px) !important; /* Dá um leve pulo para cima */
+        filter: drop-shadow(0 0 10px rgba(79, 163, 255, 0.8));
+    }
+
+    /* Remove a barra azul vertical do estilo desktop */
+    .sidebar-item.active::before {
+        display: none !important;
+    }
+
+    /* 6. OCULTAR O BOTÃO HAMBÚRGUER */
+    /* Como o menu agora está sempre fixo embaixo, não precisamos mais do botão de abrir/fechar o menu em cima */
+    #menu-btn {
+        display: none !important;
+    }
+
+    /* 7. CARREGAMENTO IMEDIATO DOS CARDS */
     .delay-1, .delay-2, .delay-3, .delay-4, .delay-5, .delay-6 {
         animation-delay: 0s;
     }
