@@ -59,12 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
             funcao: user.funcao 
           }));
 
-          // 3. Redirecionamento baseado na função (ROLE) que vem do Supabase
-          if (user.funcao === 'admin') {
-            window.location.href = './tela_admin/painel_principal.html';
-          } else {
-            window.location.href = './tela_operador/painel_principal.html';
-          }
+// O CAMINHO CORRETO PARA A VERCEL
+if (user.funcao === 'admin') {
+    window.location.href = '/frontend/tela_admin/painel_principal.html';
+} else {
+    window.location.href = '/frontend/tela_operador/painel_principal.html';
+}
+
 
         } else {
           // Se o servidor responder que os dados estão errados
