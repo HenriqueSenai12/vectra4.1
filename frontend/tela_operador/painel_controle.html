@@ -113,69 +113,89 @@
         </main>
     </div> 
 
-    <script>
-        document.addEventListener("DOMContentLoaded", async () => {
-            // --- ELEMENTOS ---
-            const sidebar = document.getElementById('sidebar');
-            const menuBtn = document.getElementById('menu-btn');
-            const btnPlay = document.getElementById('btn-play');
-            const btnStop = document.getElementById('btn-stop');
-            const statusText = document.getElementById('status-text');
-            const statusDot = document.getElementById('status-dot');
-            const statusPing = document.getElementById('status-ping');
 
-            // --- FUNCIONALIDADE DO MENU (ABRIR/FECHAR) ---
-            if (menuBtn && sidebar) {
-                menuBtn.addEventListener('click', () => {
-                    sidebar.classList.toggle('collapsed');
-                    // Ajuste opcional para a logo quando colapsado
-                    const logoImg = sidebar.querySelector('img');
-                    if (sidebar.classList.contains('collapsed')) {
-                        sidebar.style.width = '80px';
-                    } else {
-                        sidebar.style.width = '256px';
-                    }
+        <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        // --- ELEMENTOS ---
+        const sidebar = document.getElementById('sidebar');
+        const menuBtn = document.getElementById('menu-btn');
+        const btnPlay = document.getElementById('btn-play');
+        const btnStop = document.getElementById('btn-stop');
+        const statusText = document.getElementById('status-text');
+        const statusDot = document.getElementById('status-dot');
+        const statusPing = document.getElementById('status-ping');
+
+        // --- FUNCIONALIDADE DO MENU ---
+        if (menuBtn && sidebar) {
+            menuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                sidebar.style.width = sidebar.classList.contains('collapsed') ? '80px' : '256px';
+            });
+        }
+
+        // --- LÓGICA DE STATUS VISUAL ---
+        function updateStatusUI(isOperating) {
+            if (isOperating) {
+                statusText.innerText = 'EM OPERAÇÃO';
+                statusText.className = "block font-mono font-bold text-lg text-emerald-500";
+                statusDot.className = "relative inline-flex rounded-full h-4 w-4 bg-emerald-500";
+                statusPing.className = "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-emerald-400";
+                statusPing.style.display = 'block';
+            } else {
+                statusText.innerText = 'DESLIGADO';
+                statusText.className = "block font-mono font-bold text-lg text-red-500";
+                statusDot.className = "relative inline-flex rounded-full h-4 w-4 bg-red-500";
+                statusPing.style.display = 'none';
+            }
+        }
+
+        // --- ENVIAR COMANDO (PLAY/STOP) ---
+        async function mandarComando(comando) {
+            try {
+                // Desabilita botões temporariamente para evitar cliques duplos
+                btnPlay.disabled = true;
+                btnStop.disabled = true;
+
+                const res = await fetch(`/api/esteira/${comando}`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
                 });
-            }
 
-            // --- LÓGICA DE STATUS ---
-            function updateStatusUI(isOperating) {
-                if (isOperating) {
-                    statusText.innerText = 'EM OPERAÇÃO';
-                    statusText.className = "block font-mono font-bold text-lg text-emerald-500";
-                    statusDot.className = "relative inline-flex rounded-full h-4 w-4 bg-emerald-500";
-                    statusPing.className = "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-emerald-400";
-                    statusPing.style.display = 'block';
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    console.log(`Sucesso: ${comando}`);
+                    updateStatusUI(comando === 'play');
                 } else {
-                    statusText.innerText = 'DESLIGADO';
-                    statusText.className = "block font-mono font-bold text-lg text-red-500";
-                    statusDot.className = "relative inline-flex rounded-full h-4 w-4 bg-red-500";
-                    statusPing.style.display = 'none';
+                    alert("Erro ao processar comando: " + (data.error || "Erro desconhecido"));
                 }
+            } catch (e) {
+                console.error("Erro na comunicação com o servidor:", e);
+                alert("Servidor fora do ar ou erro de rede.");
+            } finally {
+                btnPlay.disabled = false;
+                btnStop.disabled = false;
             }
+        }
 
-            async function mandarComando(comando) {
-                try {
-                    const res = await fetch(`/api/esteira/${comando}`, { method: 'POST' });
-                    if (res.ok) {
-                        updateStatusUI(comando === 'play');
-                    }
-                } catch (e) { console.error("Erro no comando"); }
+        // --- VERIFICAÇÃO INICIAL ---
+        async function checkInitialStatus() {
+            try {
+                const res = await fetch('/api/esteira/status');
+                const data = await res.json();
+                updateStatusUI(data.ligado);
+            } catch (e) {
+                console.error("Erro ao recuperar status inicial");
             }
+        }
 
-            async function checkInitialStatus() {
-                try {
-                    const res = await fetch('/api/esteira/status');
-                    const data = await res.json();
-                    updateStatusUI(data.ligado);
-                } catch (e) { console.error("Erro ao recuperar status"); }
-            }
+        // EVENTOS
+        btnPlay.addEventListener('click', () => mandarComando('play'));
+        btnStop.addEventListener('click', () => mandarComando('stop'));
 
-            btnPlay.addEventListener('click', () => mandarComando('play'));
-            btnStop.addEventListener('click', () => mandarComando('stop'));
+        checkInitialStatus();
+    });
+</script>
 
-            checkInitialStatus();
-        });
-    </script>
 </body>
 </html>
