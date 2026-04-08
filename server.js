@@ -167,6 +167,32 @@ app.get('/api/usuarios', async (req, res) => {
 });
 
 
+// ==========================================================
+// ROTA DE SUPORTE / PUBLICAÇÕES
+// ==========================================================
+
+app.post('/api/publicacoes', async (req, res) => {
+    const { titulo, categoria, descricao } = req.body;
+
+    try {
+        const { data, error } = await supabase
+            .from('publicacoes')
+            .insert([{ 
+                titulo: titulo, 
+                categoria: categoria, 
+                descricao: descricao 
+            }])
+            .select();
+
+        if (error) throw error;
+        res.status(201).json({ success: true, data: data[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+
 app.get('/api/monitoramento', async (req, res) => {
   try {
     const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
