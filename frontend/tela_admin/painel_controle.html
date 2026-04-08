@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VECTRA - Controle Operacional</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body { background-color: #0B1120; }
+        .card-animado { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card-animado:hover { transform: translateY(-5px); }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0B1120; }
+        ::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 10px; }
+
+        #aurora-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1e3a5f 0%, #0b1120 100%);
+            z-index: -1;
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        vectra: {
+                            dark: '#1E3A5F',    
+                            light: '#4FA3FF',   
+                            base: '#0B1120',    
+                            panel: '#152036'    
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="font-sans antialiased text-white overflow-x-hidden">
+    
+    <div id="aurora-container"></div>
+
+    <div class="relative z-10 flex h-screen w-screen overflow-hidden">
+        
+        <aside id="sidebar" class="w-64 bg-[#0E1F35]/50 backdrop-blur-xl border-r border-white/10 h-full flex flex-col z-40 transition-all duration-300">
+            <div class="h-20 flex items-center justify-start px-6 border-b border-white/5">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-vectra-light rounded-lg flex items-center justify-center mr-3 shadow-[0_0_15px_#4FA3FF]">
+                        <i class="ph ph-intersect-three text-white font-bold"></i>
+                    </div>
+                    <span class="text-white font-bold text-xl tracking-wider">VECTRA</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 py-6 flex flex-col gap-2 px-3">
+                <a href="painel_principal.html" class="flex items-center p-3 rounded-xl text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 transition-all">
+                    <i class="ph ph-house text-2xl"></i>
+                    <span class="ml-4 font-medium">Home</span>
+                </a>
+                <a href="painel_monitoramento.html" class="flex items-center p-3 rounded-xl text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 transition-all">
+                    <i class="ph ph-chart-pie text-2xl"></i>
+                    <span class="ml-4 font-medium">Dashboard</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-white/5">
+                <a href="../login.html" class="flex items-center p-2 rounded-xl text-slate-400 hover:text-red-400 transition-all">
+                    <i class="ph ph-sign-out text-2xl"></i>
+                    <span class="ml-4 font-medium">Sair</span>
+                </a>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-full w-full overflow-y-auto">
+            
+            <header class="h-20 bg-[#0E1F35]/50 backdrop-blur-xl flex items-center justify-between px-8 sticky top-0 border-b border-white/10 z-20">
+                <div class="flex items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Controle Operacional</h1>
+                        <p class="text-sm text-slate-400">Comunicação direta com a linha de produção</p>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="flex-1 p-6 flex items-start justify-center">
+                <div class="bg-[#152036]/80 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl flex flex-col p-8 card-animado max-w-4xl mx-auto w-full mt-4">
+                    
+                    <div class="flex flex-col sm:flex-row justify-between items-center border-b border-white/10 pb-6 mb-8 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                                <i class="ph ph-cpu text-vectra-light text-3xl"></i>
+                                Vectra Core Unit 01
+                            </h2>
+                            <p class="text-slate-400 text-sm mt-1">Acionamento do CLP e registro de logs automáticos.</p>
+                        </div>
+
+                        <div class="bg-[#0B1120] border border-white/10 rounded-xl px-6 py-3 flex items-center gap-4 min-w-[250px] shadow-inner">
+                            <div class="relative flex h-4 w-4">
+                                <span id="status-ping" class="absolute inline-flex h-full w-full rounded-full opacity-75 hidden"></span>
+                                <span id="status-dot" class="relative inline-flex rounded-full h-4 w-4 bg-red-500"></span>
+                            </div>
+                            <div>
+                                <span class="block text-xs text-slate-500 font-semibold uppercase tracking-wider">Status do Sistema</span>
+                                <span id="status-text" class="block text-red-500 font-mono font-bold text-lg">DESLIGADO</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap justify-center gap-6 sm:gap-10 py-4">
+                        <button id="btn-play" class="group relative flex flex-col items-center justify-center w-36 h-36 sm:w-48 sm:h-48 bg-[#0B1120] border border-emerald-500/20 rounded-2xl hover:bg-emerald-500/10 hover:border-emerald-500 transition-all duration-300">
+                            <i class="ph-fill ph-play-circle text-6xl sm:text-7xl text-emerald-500 mb-2 group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="text-emerald-500 font-bold tracking-widest text-sm sm:text-base">INICIAR</span>
+                        </button>
+
+                        <button id="btn-stop" class="group relative flex flex-col items-center justify-center w-36 h-36 sm:w-48 sm:h-48 bg-[#0B1120] border border-red-500/20 rounded-2xl hover:bg-red-500/10 hover:border-red-500 transition-all duration-300">
+                            <i class="ph-fill ph-power text-6xl sm:text-7xl text-red-500 mb-2 group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="text-red-500 font-bold tracking-widest text-sm sm:text-base">DESLIGAR</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+            
+        </main>
+    </div> 
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const btnPlay = document.getElementById('btn-play');
+            const btnStop = document.getElementById('btn-stop');
+            const statusText = document.getElementById('status-text');
+            const statusDot = document.getElementById('status-dot');
+            const statusPing = document.getElementById('status-ping');
+
+            /**
+             * Atualiza visualmente os indicadores de status na tela
+             */
+            function updateStatusUI(isOperating) {
+                if (isOperating) {
+                    statusText.innerText = 'EM OPERAÇÃO';
+                    statusText.className = "block font-mono font-bold text-lg text-emerald-500";
+                    statusDot.className = "relative inline-flex rounded-full h-4 w-4 bg-emerald-500";
+                    statusPing.className = "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-emerald-400";
+                    statusPing.style.display = 'block';
+                } else {
+                    statusText.innerText = 'DESLIGADO';
+                    statusText.className = "block font-mono font-bold text-lg text-red-500";
+                    statusDot.className = "relative inline-flex rounded-full h-4 w-4 bg-red-500";
+                    statusPing.style.display = 'none';
+                }
+            }
+
+            /**
+             * Envia comandos de Play/Stop para o servidor
+             */
+            async function mandarComando(comando) {
+                try {
+                    // Feedback visual imediato de "processando"
+                    statusText.innerText = 'PROCESSANDO...';
+                    
+                    const resposta = await fetch(`/api/esteira/${comando}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (resposta.ok) {
+                        updateStatusUI(comando === 'play');
+                    } else {
+                        console.error("Erro na resposta do servidor");
+                        checkInitialStatus(); // Restaura status real em caso de erro
+                    }
+                } catch (erro) {
+                    console.error('Erro de conexão:', erro);
+                    statusText.innerText = 'ERRO DE CONEXÃO';
+                }
+            }
+
+            /**
+             * Verifica o estado atual no banco de dados (Persistência)
+             */
+            async function checkInitialStatus() {
+                try {
+                    const res = await fetch('/api/esteira/status');
+                    const data = await res.json();
+                    updateStatusUI(data.ligado);
+                } catch (e) {
+                    console.error("Não foi possível recuperar o status inicial.");
+                }
+            }
+
+            // Listeners de Clique
+            btnPlay.addEventListener('click', () => mandarComando('play'));
+            btnStop.addEventListener('click', () => mandarComando('stop'));
+
+            // Executa ao carregar a página para manter o estado
+            checkInitialStatus();
+        });
+    </script>
+</body>
+</html>
