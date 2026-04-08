@@ -47,7 +47,7 @@
             </div>
 
             <nav class="flex-1 py-6 flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden no-scrollbar">
-                <a href="#" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                <a href="painel_principal.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
                     <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <i class="ph ph-house text-2xl min-w-[24px]"></i>
                     <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Home</span>
@@ -59,26 +59,24 @@
                     <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Dashboard</span>
                 </a>
                 
-                
-                
                 <a href="painel_usuarios.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
                     <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <i class="ph ph-users text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
                     <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Usuários</span>
                 </a>
                 
-                <a href="painel_config.html" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
-                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <i class="ph ph-gear text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                <a href="#" class="sidebar-item active text-vectra-light bg-vectra-light/10 flex items-center p-3 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-gear text-2xl min-w-[24px] scale-110 transition-transform duration-300"></i>
                     <span class="sidebar-text ml-4 font-medium whitespace-nowrap transition-opacity duration-300">Configurações</span>
                 </a>
             </nav>
 
             <div class="p-4 border-t border-white/5 overflow-hidden">
-                <a href="#" data-tooltip="Meu Perfil" class="sidebar-item text-slate-400 hover:text-vectra-light hover:bg-vectra-light/10 flex items-center p-2 rounded-xl relative group transition-all duration-300">
-                    <div class="absolute left-0 w-1 h-8 bg-vectra-light rounded-r-md shadow-[0_0_10px_#4FA3FF] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <i class="ph ph-user-circle text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
-                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap">Meu Perfil</span>
+                <a href="../login.html" data-tooltip="Sair" class="sidebar-item text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 flex items-center p-2 rounded-xl relative group transition-all duration-300">
+                    <div class="absolute left-0 w-1 h-8 bg-rose-500 rounded-r-md shadow-[0_0_10px_#f43f5e] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <i class="ph ph-sign-out text-2xl min-w-[24px] group-hover:scale-110 transition-transform duration-300"></i>
+                    <span class="sidebar-text ml-4 font-medium whitespace-nowrap">Sair</span>
                 </a>
             </div>
         </aside>
@@ -244,35 +242,49 @@
             // ===============================================================
             async function loadUserProfile() {
                 try {
-                    // Pega o nome do navegador
+                    // 1. Pega os dados que já foram salvos no navegador no momento do Login
                     const storedUser = JSON.parse(localStorage.getItem('vectraUser') || '{}');
-                    const nomeLogado = storedUser.nome || storedUser.nome_completo;
+                    const nomeLogado = storedUser.nome || storedUser.nome_completo || 'Usuário';
+                    const emailLogado = storedUser.email || '';
                     
-                    if (!nomeLogado) return; // Se não tem nome, nem tenta.
+                    if (!nomeLogado || nomeLogado === 'Usuário') return;
 
-                    // Pede pro servidor a lista de todos os usuários
+                    // 2. MOSTRA NA TELA IMEDIATAMENTE (Garante que o Avatar e os Inputs não fiquem em branco)
+                    document.getElementById('input-nome').value = nomeLogado;
+                    document.getElementById('input-email').value = emailLogado || 'Buscando e-mail...';
+                    
+                    // 👉 Funcionalidade do Avatar aplicada de imediato:
+                    document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeLogado)}&background=1E3A5F&color=fff`;
+
+                    // 3. Pede pro servidor a lista de todos os usuários para confirmar o ID e email
                     const response = await fetch('/api/users');
                     if (response.ok) {
                         const todosUsuarios = await response.json();
                         
-                        // Procura qual usuário tem esse exato nome
-                        const myUser = todosUsuarios.find(u => u.nome_completo === nomeLogado || u.nome === nomeLogado);
+                        // Procura qual usuário tem esse exato nome ou email
+                        const myUser = todosUsuarios.find(u => u.nome_completo === nomeLogado || u.nome === nomeLogado || u.email === emailLogado);
                         
                         if (myUser) {
-                            loggedUserId = myUser.id; // Guarda o ID para poder atualizar!
+                            loggedUserId = myUser.id; // Guarda o ID para poder atualizar a senha!
                             
-                            // Preenche os Inputs
-                            document.getElementById('input-nome').value = myUser.nome_completo || '';
+                            // Preenche os Inputs com os dados oficiais do banco
+                            document.getElementById('input-nome').value = myUser.nome_completo || myUser.nome || '';
                             document.getElementById('input-email').value = myUser.email || '';
                             document.getElementById('input-senha').value = ''; // Mantém vazio por segurança
                             
-                            // Atualiza a foto de Avatar
-                            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(myUser.nome_completo)}&background=1E3A5F&color=fff`;
+                            // 👉 Atualiza a foto de Avatar novamente caso o nome completo do banco seja mais preciso
+                            const nomeOficial = myUser.nome_completo || myUser.nome;
+                            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeOficial)}&background=1E3A5F&color=fff`;
+
+                            // Atualiza o cache do navegador
+                            storedUser.id = myUser.id;
+                            storedUser.email = myUser.email;
+                            localStorage.setItem('vectraUser', JSON.stringify(storedUser));
                         }
                     }
                 } catch (error) {
                     console.error('Erro carregando perfil:', error);
-                    showToast('Não foi possível carregar o perfil.', 'error');
+                    // Não mostramos showToast de erro aqui, pois a tela já foi preenchida no passo 2!
                 }
             }
 
@@ -316,7 +328,7 @@
                         document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(novoNome)}&background=1E3A5F&color=fff&t=${Date.now()}`;
                         
                         // ATENÇÃO: Atualiza o localStorage com o nome novo, para o sistema não te expulsar da tela!
-                        const storedUser = JSON.parse(localStorage.getItem('vectraUser'));
+                        const storedUser = JSON.parse(localStorage.getItem('vectraUser') || '{}');
                         storedUser.nome = novoNome;
                         localStorage.setItem('vectraUser', JSON.stringify(storedUser));
                         
@@ -339,7 +351,7 @@
                 const toast = document.createElement('div');
                 toast.id = 'vectra-toast';
                 toast.className = 'fixed top-4 right-4 z-[10000] p-4 rounded-xl shadow-2xl border max-w-md font-medium flex items-center gap-2 ' +
-                    (type === 'success' ? 'bg-green-500/20 backdrop-blur border-green-400/50 text-green-100' : 'bg-red-500/20 backdrop-blur border-red-400/50 text-red-100');
+                    (type === 'success' ? 'bg-emerald-500/20 backdrop-blur border-emerald-400/50 text-emerald-100' : 'bg-red-500/20 backdrop-blur border-red-400/50 text-red-100');
                 toast.innerHTML = '<i class="ph ph-' + (type === 'success' ? 'check-circle' : 'x-circle') + ' text-lg flex-shrink-0"></i><span>' + message + '</span>';
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 4000);
