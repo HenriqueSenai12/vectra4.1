@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
             tooltip: { theme: 'dark' }
         };
 
-        // Gráfico 1: Linha Única (Eventos ao Longo do Tempo)
+        // Gráfico 1: Linha Única (Eventos ao Longo do Tempo) - SOMENTE AZUL
         if (document.querySelector("#line-chart")) {
             chartLine = new ApexCharts(document.querySelector("#line-chart"), {
                 ...baseOptions,
@@ -88,13 +88,13 @@ document.addEventListener("DOMContentLoaded", () => {
             chartDonut.render();
         }
 
-        // Gráfico 3: Barras
+        // Gráfico 3: Barras - VOLTOU A SER DUPLO (AZUL E VERMELHO)
         if (document.querySelector("#bar-chart-horizontal")) {
             chartBarHorizontal = new ApexCharts(document.querySelector("#bar-chart-horizontal"), {
                 ...baseOptions,
-                series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }],
-                chart: { type: 'bar', height: '100%', width: '100%', stacked: false },
-                colors: [themeColors.cyan],
+                series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }, { name: 'Paradas', data: [0,0,0,0,0,0,0] }],
+                chart: { type: 'bar', height: '100%', width: '100%', stacked: true },
+                colors: [themeColors.cyan, themeColors.red],
                 plotOptions: { bar: { horizontal: false, borderRadius: 4, columnWidth: '40%' } },
                 xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } } },
                 yaxis: { labels: { style: { colors: themeColors.text } } },
@@ -138,9 +138,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // ---------------------------------------------------
             const diasSimulados = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
             const iniSimulado = Array.from({length: 7}, () => Math.floor(Math.random() * 50) + 10); // Números entre 10 e 60
+            const peSimulado = Array.from({length: 7}, () => Math.floor(Math.random() * 10));      // Números entre 0 e 10 (Voltou a linha vermelha simulada)
 
             if (chartLine) {
-                // 👇 AQUI ESTAVA O ERRO: Agora enviamos apenas 1 array de dados (iniSimulado)
+                // Gráfico 1 continua recebendo apenas a linha AZUL
                 chartLine.updateSeries([{ data: iniSimulado }]);
                 chartLine.updateOptions({ xaxis: { categories: diasSimulados } });
             }
@@ -154,8 +155,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             if (chartBarHorizontal) {
-                // 👇 AQUI TAMBÉM: Enviamos apenas 1 array de dados (iniSimulado)
-                chartBarHorizontal.updateSeries([{ data: iniSimulado }]);
+                // Gráfico 3 volta a receber as duas linhas: AZUL e VERMELHA
+                chartBarHorizontal.updateSeries([{ data: iniSimulado }, { data: peSimulado }]);
                 chartBarHorizontal.updateOptions({ xaxis: { categories: diasSimulados } });
             }
 
