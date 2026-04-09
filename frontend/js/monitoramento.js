@@ -143,11 +143,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             // Verifica se o servidor mandou dados da barra antes de atualizar
+                        // Verifica se o servidor mandou dados da barra antes de atualizar
             if (chartBarHorizontal && data.graficoBarraHoriz) {
+                
+                // 1. CORREÇÃO: Agora usa tempoOperando e tempoParado (igual o server.js envia)
                 chartBarHorizontal.updateSeries([
-                    { data: data.graficoBarraHoriz.ini }, 
-                    { data: data.graficoBarraHoriz.pe }
+                    { data: data.graficoBarraHoriz.tempoOperando }, 
+                    { data: data.graficoBarraHoriz.tempoParado }
                 ]);
+
+                // 2. MELHORIA: Atualiza o eixo X para mostrar as datas reais (09/04, 10/04...) em vez de "Seg", "Ter"
+                if (data.graficoLinha.datas && data.graficoLinha.datas.length > 0) {
+                    chartBarHorizontal.updateOptions({
+                        xaxis: { categories: data.graficoLinha.datas }
+                    });
+                }
             }
 
 
