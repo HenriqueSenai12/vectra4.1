@@ -80,6 +80,9 @@ async function registrarMetricaDiaria(equipamento_id, tipo_evento, valor_increme
 // ==========================================================
 // ROTAS DE USUÁRIOS
 // ==========================================================
+// ==========================================================
+// ROTAS DE USUÁRIOS
+// ==========================================================
 app.post('/api/login', async (req, res) => {
     const { email, senha } = req.body;
     const { data: usuario, error } = await supabase.from('usuarios').select('nome_completo, funcao').eq('email', email).eq('senha', senha).maybeSingle();
@@ -87,9 +90,64 @@ app.post('/api/login', async (req, res) => {
     res.json({ success: true, user: { nome: usuario.nome_completo, funcao: usuario.funcao } });
 });
 
+// 1. LISTAR USUÁRIOS (Já existia)
 app.get('/api/users', async (req, res) => {
-    const { data } = await supabase.from('usuarios').select('*').order('id', { ascending: true });
+    const { data, error } = await supabase.from('usuarios').select('*').order('id', { ascending: true });
+    if (error) return res.status(500).json({ error: error.message });
     res.json(data);
+});
+
+// 2. CRIAR NOVO USUÁRIO (Novo)
+app.post('/api/users', async (req, res) => {
+    const { nome_completo, email, senha, funcao } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .insert([{ nome_completo, email, senha, funcao }])
+            .select();
+            
+        if (error) throw error;
+        res.status(201).json({ success: true, data: data[0] });
+    } catch (err) { 
+        res.status(400).json({ success: false, error: err.message }); 
+    }
+});
+
+// 3. SALVAR ALTERAÇÕES DE UM USUÁRIO EXISTENTE (Novo)
+app.put('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nome_completo, email, senha, funcao } = req.body;
+    
+    try {
+        // Monta o objeto de atualização (se a senha vier vazia, não atualiza a senha)
+        let updateData = { nome_completo, email, funcao };
+        if (senha && senha.trim() !== '') {
+            updateData.senha = senha;
+        }
+
+        const { data, error } = await supabase
+            .from('usuarios')
+            .update(updateData)
+            .eq('id', id)
+            .select();
+            
+        if (error) throw error;
+        res.json({ success: true, data: data[0] });
+    } catch (err) { 
+        res.status(400).json({ success: false, error: err.message }); 
+    }
+});
+
+// 4. DELETAR USUÁRIO (Opcional, mas recomendado para o painel)
+app.delete('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase.from('usuarios').delete().eq('id', id);
+        if (error) throw error;
+        res.json({ success: true, message: 'Usuário deletado com sucesso' });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
 });
 
 // ==========================================================
