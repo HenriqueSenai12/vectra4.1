@@ -47,21 +47,28 @@ document.addEventListener("DOMContentLoaded", () => {
             tooltip: { theme: 'dark' }
         };
 
-        // Gráfico 1: Linhas Duplas
+             // Gráfico 1: Linha Única (Eventos ao Longo do Tempo)
         if (document.querySelector("#line-chart")) {
             chartLine = new ApexCharts(document.querySelector("#line-chart"), {
                 ...baseOptions,
-                series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }, { name: 'Parada de Emergência', data: [0,0,0,0,0,0,0] }], 
+                // 👇 AQUI: Removemos a segunda série, deixando apenas 'Inicializado'
+                series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }], 
                 chart: { type: 'area', height: '100%', width: '100%', animations: { enabled: true } },
-                colors: [themeColors.cyan, themeColors.red],
+                // 👇 AQUI: Tiramos a cor vermelha, deixando apenas a Azul (cyan)
+                colors: [themeColors.cyan],
                 stroke: { curve: 'smooth', width: 3 },
                 fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
                 xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } } },
-                yaxis: { labels: { style: { colors: themeColors.text } } },
+                yaxis: { 
+                    labels: { style: { colors: themeColors.text } },
+                    min: 0, // Força o eixo a começar no zero, evitando corte na base
+                    max: (max) => { return Math.ceil(max * 1.2); } // Adiciona 20% de margem no topo, evitando corte nos bicos
+                },
                 legend: { position: 'top', horizontalAlign: 'right', labels: { colors: '#fff' } }
             });
             chartLine.render();
         }
+
 
         // Gráfico 2: Donut
         if (document.querySelector("#donut-chart")) {
