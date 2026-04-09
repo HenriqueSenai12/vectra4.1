@@ -78,11 +78,12 @@ document.addEventListener("DOMContentLoaded", () => {
             chartDonut.render();
         }
 
-        // Gráfico 3: Barras
+               // Gráfico 3: Barras
         if (document.querySelector("#bar-chart-horizontal")) {
             chartBarHorizontal = new ApexCharts(document.querySelector("#bar-chart-horizontal"), {
                 ...baseOptions,
-                series: [{ name: 'Tempo Operando', data: [0,0,0,0,0,0,0] }, { name: 'Tempo Parado', data: [0,0,0,0,0,0,0] }],
+                // 👇 AQUI: Trocamos "Tempo" por "Inicializado" e "Paradas"
+                series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }, { name: 'Paradas', data: [0,0,0,0,0,0,0] }],
                 chart: { type: 'bar', height: '100%', width: '100%', stacked: true },
                 colors: [themeColors.cyan, themeColors.red],
                 plotOptions: { bar: { horizontal: false, borderRadius: 4, columnWidth: '40%' } },
@@ -92,6 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             chartBarHorizontal.render();
         }
+
     }
 
     // ==========================================
