@@ -198,13 +198,28 @@ app.get('/api/monitoramento', async (req, res) => {
         const opcoesHora = { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
         const opcoesData = { timeZone: 'America/Sao_Paulo' };
 
+        // 📊 Calcula os totais para o Gráfico de Rosca
+        const totalInicializacoes = metricas?.reduce((acc, curr) => acc + (curr.inicializacoes_count || 0), 0) || 1;
+        const totalEmergencias = metricas?.reduce((acc, curr) => acc + (curr.paradas_emergencia_count || 0), 0) || 0;
+
         res.json({
-            // Agora as linhas do gráfico vão crescer sozinhas
+            // Gráfico de Linha
             graficoLinha: { 
                 datas: metricas?.map(m => new Date(m.data_registro).toLocaleDateString('pt-BR')) || [], // Envia a data para o gráfico
                 ini: metricas?.map(m => m.inicializacoes_count) || [], 
                 pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
             },
+            
+            // NOVO: Gráfico de Rosca [Operando, Manutenção, Emergência]
+            graficoRosca: [totalInicializacoes, 0, totalEmergencias], 
+            
+            // NOVO: Gráfico de Barras (Tempo em minutos operando vs parado)
+            graficoBarraHoriz: {
+                tempoOperando: metricas?.map(m => m.tempo_operacao_minutos || 0) || [],
+                tempoParado: metricas?.map(m => 0) || [] // Se não tiver lógica de tempo parado no banco, enviamos 0
+            },
+
+            // Status e Tabela de Histórico
             status: {
                 isOnline: eq?.status_atual === 'online',
                 emergencyStops: eq?.paradas_emergencia_count || 0,
