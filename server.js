@@ -45,7 +45,7 @@ const formatarTempoComplexo = (totalSegundos) => {
  * Verifica o dia atual e incrementa as estatísticas
  */
 async function registrarMetricaDiaria(equipamento_id, tipo_evento, valor_incremento) {
-    const hoje = new Date().toISOString().split('T')[0]; // Retorna YYYY-MM-DD (ex: 2026-04-09)
+    const hoje = new Date().toISOString().split('T')[0]; // Retorna YYYY-MM-DD
     
     // 1. Verifica se já existe um registro para o dia de hoje
     const { data: metricaHoje } = await supabase
@@ -80,13 +80,13 @@ async function registrarMetricaDiaria(equipamento_id, tipo_evento, valor_increme
 // ==========================================================
 // ROTAS DE USUÁRIOS
 // ==========================================================
-// (Suas rotas de login, get, post, put, delete de usuários continuam intactas aqui)
 app.post('/api/login', async (req, res) => {
     const { email, senha } = req.body;
     const { data: usuario, error } = await supabase.from('usuarios').select('nome_completo, funcao').eq('email', email).eq('senha', senha).maybeSingle();
     if (error || !usuario) return res.status(401).json({ success: false, message: "Email ou senha incorretos" });
     res.json({ success: true, user: { nome: usuario.nome_completo, funcao: usuario.funcao } });
 });
+
 app.get('/api/users', async (req, res) => {
     const { data } = await supabase.from('usuarios').select('*').order('id', { ascending: true });
     res.json(data);
@@ -148,6 +148,24 @@ app.post('/api/esteira/stop', async (req, res) => {
         }
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ==========================================================
+// ROTA DE PUBLICAÇÕES (Salva os chamados de suporte)
+// ==========================================================
+app.post('/api/publicacoes', async (req, res) => {
+    const { titulo, categoria, descricao } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('publicacoes')
+            .insert([{ titulo, categoria, descricao }])
+            .select();
+            
+        if (error) throw error;
+        res.status(201).json({ success: true, data: data[0] });
+    } catch (err) { 
+        res.status(400).json({ success: false, error: err.message }); 
+    }
 });
 
 // ==========================================================
