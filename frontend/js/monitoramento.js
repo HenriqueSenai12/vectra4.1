@@ -68,7 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
             chartDonut = new ApexCharts(document.querySelector("#donut-chart"), {
                 ...baseOptions,
                 series: [1, 1, 1], 
-                // 👇 AQUI: Trocamos 'Operando' por 'Inicializado' para manter o padrão
                 labels: ['Inicializado', 'Manutenção', 'Parada de Emergência'],
                 colors: [themeColors.cyan, themeColors.yellow, themeColors.red],
                 chart: { type: 'donut', height: '100%', width: '100%' },
@@ -83,9 +82,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (document.querySelector("#bar-chart-horizontal")) {
             chartBarHorizontal = new ApexCharts(document.querySelector("#bar-chart-horizontal"), {
                 ...baseOptions,
-                series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }, { name: 'Paradas', data: [0,0,0,0,0,0,0] }],
-                chart: { type: 'bar', height: '100%', width: '100%', stacked: true },
-                colors: [themeColors.cyan, themeColors.red],
+                series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }],
+                chart: { type: 'bar', height: '100%', width: '100%', stacked: false },
+                colors: [themeColors.cyan],
                 plotOptions: { bar: { horizontal: false, borderRadius: 4, columnWidth: '40%' } },
                 xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } } },
                 yaxis: { labels: { style: { colors: themeColors.text } } },
@@ -93,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             chartBarHorizontal.render();
         }
-    }
+    } // <--- CHAVE DE FECHAMENTO ADICIONADA AQUI
 
     // ==========================================
     // 3. BUSCAR DADOS DO SUPABASE E ATUALIZAR
@@ -145,7 +144,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             if (chartBarHorizontal) {
-                chartBarHorizontal.updateSeries([{ data: iniSimulado }, { data: peSimulado }]);
+                // CORREÇÃO: Enviando apenas a série de Inicializado, pois a barra de parada foi removida
+                chartBarHorizontal.updateSeries([{ data: iniSimulado }]);
                 chartBarHorizontal.updateOptions({ xaxis: { categories: diasSimulados } });
             }
 
