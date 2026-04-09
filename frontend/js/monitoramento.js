@@ -42,40 +42,42 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const baseOptions = {
             chart: { fontFamily: 'Inter, sans-serif', toolbar: { show: false }, background: 'transparent' },
-            grid: { borderColor: themeColors.grid, strokeDashArray: 3, xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } } },
+            grid: { 
+                borderColor: themeColors.grid, 
+                strokeDashArray: 3, 
+                xaxis: { lines: { show: false } }, 
+                yaxis: { lines: { show: true } },
+                padding: { top: 20, right: 15, left: 10, bottom: 15 } 
+            },
             dataLabels: { enabled: false },
             tooltip: { theme: 'dark' }
         };
 
-             // Gráfico 1: Linha Única (Eventos ao Longo do Tempo)
+        // Gráfico 1: Linha Única (Eventos ao Longo do Tempo)
         if (document.querySelector("#line-chart")) {
             chartLine = new ApexCharts(document.querySelector("#line-chart"), {
                 ...baseOptions,
-                // 👇 AQUI: Removemos a segunda série, deixando apenas 'Inicializado'
                 series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }], 
                 chart: { type: 'area', height: '100%', width: '100%', animations: { enabled: true } },
-                // 👇 AQUI: Tiramos a cor vermelha, deixando apenas a Azul (cyan)
                 colors: [themeColors.cyan],
                 stroke: { curve: 'smooth', width: 3 },
                 fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
                 xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } } },
                 yaxis: { 
                     labels: { style: { colors: themeColors.text } },
-                    min: 0, // Força o eixo a começar no zero, evitando corte na base
-                    max: (max) => { return Math.ceil(max * 1.2); } // Adiciona 20% de margem no topo, evitando corte nos bicos
+                    min: 0, 
+                    max: (max) => { return Math.ceil(max * 1.2); } 
                 },
                 legend: { position: 'top', horizontalAlign: 'right', labels: { colors: '#fff' } }
             });
             chartLine.render();
         }
 
-
         // Gráfico 2: Donut
         if (document.querySelector("#donut-chart")) {
             chartDonut = new ApexCharts(document.querySelector("#donut-chart"), {
                 ...baseOptions,
                 series: [1, 1, 1], 
-                // 👇 AQUI: Trocamos 'Operando' por 'Inicializado' para manter o padrão
                 labels: ['Inicializado', 'Manutenção', 'Parada de Emergência'],
                 colors: [themeColors.cyan, themeColors.yellow, themeColors.red],
                 chart: { type: 'donut', height: '100%', width: '100%' },
@@ -90,9 +92,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (document.querySelector("#bar-chart-horizontal")) {
             chartBarHorizontal = new ApexCharts(document.querySelector("#bar-chart-horizontal"), {
                 ...baseOptions,
-                series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }, { name: 'Paradas', data: [0,0,0,0,0,0,0] }],
-                chart: { type: 'bar', height: '100%', width: '100%', stacked: true },
-                colors: [themeColors.cyan, themeColors.red],
+                series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }],
+                chart: { type: 'bar', height: '100%', width: '100%', stacked: false },
+                colors: [themeColors.cyan],
                 plotOptions: { bar: { horizontal: false, borderRadius: 4, columnWidth: '40%' } },
                 xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } } },
                 yaxis: { labels: { style: { colors: themeColors.text } } },
@@ -136,10 +138,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // ---------------------------------------------------
             const diasSimulados = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
             const iniSimulado = Array.from({length: 7}, () => Math.floor(Math.random() * 50) + 10); // Números entre 10 e 60
-            const peSimulado = Array.from({length: 7}, () => Math.floor(Math.random() * 10));      // Números entre 0 e 10
 
             if (chartLine) {
-                chartLine.updateSeries([{ data: iniSimulado }, { data: peSimulado }]);
+                // 👇 AQUI ESTAVA O ERRO: Agora enviamos apenas 1 array de dados (iniSimulado)
+                chartLine.updateSeries([{ data: iniSimulado }]);
                 chartLine.updateOptions({ xaxis: { categories: diasSimulados } });
             }
             
@@ -152,7 +154,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             if (chartBarHorizontal) {
-                chartBarHorizontal.updateSeries([{ data: iniSimulado }, { data: peSimulado }]);
+                // 👇 AQUI TAMBÉM: Enviamos apenas 1 array de dados (iniSimulado)
+                chartBarHorizontal.updateSeries([{ data: iniSimulado }]);
                 chartBarHorizontal.updateOptions({ xaxis: { categories: diasSimulados } });
             }
 
