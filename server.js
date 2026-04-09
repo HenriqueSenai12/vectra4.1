@@ -135,12 +135,13 @@ app.post('/api/esteira/play', async (req, res) => {
 
 app.post('/api/esteira/stop', async (req, res) => {
     try {
+        // 1. Desliga o equipamento
         await supabase.from('equipamentos').update({ status_atual: 'offline' }).eq('id', 1);
 
-        // Busca o log, garantindo que pegamos o usuario_id puro
+        // 2. Busca o log aberto
         const { data: logAberto, error: errBusca } = await supabase
             .from('logs_operacao')
-            .select('id, data_inicio, usuario_id') 
+            .select('*') 
             .eq('status', 'em_andamento')
             .eq('equipamento_id', 1)
             .order('data_inicio', { ascending: false })
@@ -152,31 +153,26 @@ app.post('/api/esteira/stop', async (req, res) => {
         if (logAberto) {
             const dataInicio = new Date(logAberto.data_inicio);
             const dataFim = new Date();
-            const duracaoSegundos = Math.floor((dataFim - dataInicio) / 1000);
+            const duracaoMs = dataFim - dataInicio;
+            const duracaoSegundos = Math.floor(duracaoMs / 1000);
 
-            // --- TRATAMENTO DO USUARIO_ID ---
-            let idFinal = null;
-            if (logAberto.usuario_id) {
-                // Se for objeto {id: 1}, pega o .id. Se for só o número 1, usa ele mesmo.
-                idFinal = typeof logAberto.usuario_id === 'object' 
-                    ? logAberto.usuario_id.id 
-                    : logAberto.usuario_id;
-            }
-
+            // 3. A MÁGICA ESTÁ AQUI: NÃO ENVIE O usuario_id NO UPDATE
             const { error: errUpdate } = await supabase
                 .from('logs_operacao')
                 .update({ 
                     data_fim: dataFim.toISOString(),
                     duracao_minutos: duracaoSegundos, 
-                    status: 'finalizado',
-                    usuario_id: idFinal // Re-insere o ID tratado
+                    status: 'finalizado'
+                    // ❌ REMOVA QUALQUER MENÇÃO AO usuario_id DESTE BLOCO!
                 })
                 .eq('id', logAberto.id);
 
             if (errUpdate) throw errUpdate;
         }
+
         res.json({ success: true });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
