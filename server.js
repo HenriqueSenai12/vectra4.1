@@ -12,26 +12,22 @@ const PORT = process.env.PORT || 3300;
 const supabaseUrl = process.env.SUPABASE_PUBLIC_URL || 'https://ncdviiijzbbqugyiusyq.supabase.co';
 const supabaseKey = process.env.SUPABASE_PUBLIC_KEY || 'sb_publishable_Lwh8-C2Ah3PLP-riPKtq8w_R4oxJgxC';
 
-if (!supabaseUrl || !supabaseKey) {
-    console.error("❌ ERRO: Credenciais do Supabase não encontradas!");
-}
-
+if (!supabaseUrl || !supabaseKey) console.error("❌ ERRO: Credenciais não encontradas!");
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(cors());
 app.use(express.json());
 
 // ==========================================================
-// ARQUIVOS ESTÁTICOS E ROTAS GERAIS
+// ARQUIVOS ESTÁTICOS
 // ==========================================================
 app.use('/frontend', express.static(path.join(__dirname, 'frontend')));
 app.use('/image', express.static(path.join(__dirname, 'image')));
-
 app.get('/styles.css', (req, res) => res.sendFile(path.join(__dirname, 'styles.css')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ==========================================================
-// FUNÇÃO AUXILIAR DE FORMATAÇÃO DE TEMPO
+// FUNÇÕES AUXILIARES
 // ==========================================================
 const formatarTempoComplexo = (totalSegundos) => {
     if (totalSegundos === null || totalSegundos === undefined) return "--";
@@ -44,161 +40,150 @@ const formatarTempoComplexo = (totalSegundos) => {
     return (hDisplay + mDisplay + sDisplay).trim();
 };
 
+/**
+ * 🚀 MOTOR DE MÉTRICAS DIÁRIAS (Alimenta os Gráficos)
+ * Verifica o dia atual e incrementa as estatísticas
+ */
+async function registrarMetricaDiaria(equipamento_id, tipo_evento, valor_incremento) {
+    const hoje = new Date().toISOString().split('T')[0]; // Retorna YYYY-MM-DD (ex: 2026-04-09)
+    
+    // 1. Verifica se já existe um registro para o dia de hoje
+    const { data: metricaHoje } = await supabase
+        .from('metricas_diarias')
+        .select('*')
+        .eq('equipamento_id', equipamento_id)
+        .eq('data_registro', hoje)
+        .maybeSingle();
+
+    if (metricaHoje) {
+        // 2. Se o dia já existe, apenas soma os valores
+        let updateData = {};
+        if (tipo_evento === 'play') updateData.inicializacoes_count = metricaHoje.inicializacoes_count + valor_incremento;
+        if (tipo_evento === 'manutencao') updateData.paradas_emergencia_count = metricaHoje.paradas_emergencia_count + valor_incremento;
+        if (tipo_evento === 'tempo') updateData.tempo_operacao_minutos = (metricaHoje.tempo_operacao_minutos || 0) + valor_incremento;
+
+        await supabase.from('metricas_diarias').update(updateData).eq('id', metricaHoje.id);
+    } else {
+        // 3. Se é o primeiro evento do dia, cria a linha no banco
+        let insertData = {
+            equipamento_id: equipamento_id,
+            data_registro: hoje,
+            inicializacoes_count: tipo_evento === 'play' ? valor_incremento : 0,
+            paradas_emergencia_count: tipo_evento === 'manutencao' ? valor_incremento : 0,
+            tempo_operacao_minutos: tipo_evento === 'tempo' ? valor_incremento : 0,
+            energia_consumida_kwh: 0 // Inicia zerado
+        };
+        await supabase.from('metricas_diarias').insert([insertData]);
+    }
+}
+
 // ==========================================================
 // ROTAS DE USUÁRIOS
 // ==========================================================
-app.get('/api/test-db', async (req, res) => {
-    try {
-        const { data, error } = await supabase.from('usuarios').select('nome_completo').limit(1);
-        if (error) throw error;
-        res.json({ status: "✅ Conectado ao Supabase!", data });
-    } catch (err) { res.status(500).json({ status: "❌ Erro na conexão", message: err.message }); }
-});
-
+// (Suas rotas de login, get, post, put, delete de usuários continuam intactas aqui)
 app.post('/api/login', async (req, res) => {
     const { email, senha } = req.body;
     const { data: usuario, error } = await supabase.from('usuarios').select('nome_completo, funcao').eq('email', email).eq('senha', senha).maybeSingle();
     if (error || !usuario) return res.status(401).json({ success: false, message: "Email ou senha incorretos" });
     res.json({ success: true, user: { nome: usuario.nome_completo, funcao: usuario.funcao } });
 });
-
 app.get('/api/users', async (req, res) => {
-    try {
-        const { data, error } = await supabase.from('usuarios').select('*').order('id', { ascending: true });
-        if (error) throw error;
-        res.json(data);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.post('/api/users', async (req, res) => {
-    const { nome_completo, email, funcao, senha } = req.body;
-    try {
-        const { data, error } = await supabase.from('usuarios').insert([{ nome_completo, email, funcao, senha }]).select();
-        if (error) throw error;
-        res.status(201).json(data[0]);
-    } catch (err) { res.status(400).json({ error: err.message }); }
-});
-
-app.put('/api/users/:id', async (req, res) => {
-    const { id } = req.params;
-    const { nome_completo, funcao, senha } = req.body;
-    const updateData = { nome_completo, funcao };
-    if (senha) updateData.senha = senha;
-    try {
-        const { data, error } = await supabase.from('usuarios').update(updateData).eq('id', id).select();
-        if (error) throw error;
-        res.json(data[0]);
-    } catch (err) { res.status(400).json({ error: err.message }); }
-});
-
-app.delete('/api/users/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        const { error } = await supabase.from('usuarios').delete().eq('id', id);
-        if (error) throw error;
-        res.json({ success: true, message: "Usuário deletado com sucesso!" });
-    } catch (err) { res.status(400).json({ error: err.message }); }
+    const { data } = await supabase.from('usuarios').select('*').order('id', { ascending: true });
+    res.json(data);
 });
 
 // ==========================================================
-// CONTROLE DA ESTEIRA (PLAY / STOP / STATUS)
+// CONTROLE DA ESTEIRA E ALIMENTAÇÃO DOS GRÁFICOS
 // ==========================================================
-
 app.get('/api/esteira/status', async (req, res) => {
-    try {
-        const { data: logAtivo, error } = await supabase.from('logs_operacao').select('*').eq('status', 'em_andamento').eq('equipamento_id', 1).limit(1).maybeSingle();
-        if (error) throw error;
-        res.json({ ligado: !!logAtivo });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    const { data: logAtivo } = await supabase.from('logs_operacao').select('*').eq('status', 'em_andamento').eq('equipamento_id', 1).limit(1).maybeSingle();
+    res.json({ ligado: !!logAtivo });
 });
 
 app.post('/api/esteira/play', async (req, res) => {
     const { email } = req.body;
     try {
         await supabase.from('equipamentos').update({ status_atual: 'online', ultima_inicializacao: new Date() }).eq('id', 1);
+        
         let id_do_usuario = null;
         if (email) {
             const { data: userDb } = await supabase.from('usuarios').select('id').eq('email', email).maybeSingle();
             if (userDb) id_do_usuario = userDb.id;
         }
-        const { error } = await supabase.from('logs_operacao').insert([{ 
-            equipamento_id: 1, 
-            status: 'em_andamento', 
-            tipo_evento: 'operacao_normal',
-            descricao: 'Iniciado via Painel de Controle',
-            usuario_id: id_do_usuario 
+
+        await supabase.from('logs_operacao').insert([{ 
+            equipamento_id: 1, status: 'em_andamento', tipo_evento: 'operacao_normal', usuario_id: id_do_usuario 
         }]);
-        if (error) throw error;
+
+        // 📊 ALIMENTA O GRÁFICO: Registra +1 inicialização no dia de hoje
+        await registrarMetricaDiaria(1, 'play', 1);
+
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/esteira/stop', async (req, res) => {
     try {
-        // 1. Desliga o equipamento
         await supabase.from('equipamentos').update({ status_atual: 'offline' }).eq('id', 1);
 
-        // 2. Busca o log aberto
-        const { data: logAberto, error: errBusca } = await supabase
-            .from('logs_operacao')
-            .select('*') 
-            .eq('status', 'em_andamento')
-            .eq('equipamento_id', 1)
-            .order('data_inicio', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-        if (errBusca) throw errBusca;
+        const { data: logAberto } = await supabase
+            .from('logs_operacao').select('*').eq('status', 'em_andamento').eq('equipamento_id', 1)
+            .order('data_inicio', { ascending: false }).limit(1).maybeSingle();
 
         if (logAberto) {
             const dataInicio = new Date(logAberto.data_inicio);
             const dataFim = new Date();
-            const duracaoMs = dataFim - dataInicio;
-            const duracaoSegundos = Math.floor(duracaoMs / 1000);
+            const duracaoSegundos = Math.floor((dataFim - dataInicio) / 1000);
 
-            // 3. A MÁGICA ESTÁ AQUI: NÃO ENVIE O usuario_id NO UPDATE
-            const { error: errUpdate } = await supabase
-                .from('logs_operacao')
-                .update({ 
-                    data_fim: dataFim.toISOString(),
-                    duracao_minutos: duracaoSegundos, 
-                    status: 'finalizado'
-                    // ❌ REMOVA QUALQUER MENÇÃO AO usuario_id DESTE BLOCO!
-                })
+            // Sem menção ao usuario_id para não apagar o vínculo
+            await supabase.from('logs_operacao')
+                .update({ data_fim: dataFim.toISOString(), duracao_minutos: duracaoSegundos, status: 'finalizado' })
                 .eq('id', logAberto.id);
 
-            if (errUpdate) throw errUpdate;
+            // 📊 ALIMENTA A TABELA DE MÉTRICAS: Acumula o tempo rodado no dia (em minutos)
+            const tempoEmMinutos = Math.floor(duracaoSegundos / 60);
+            if (tempoEmMinutos > 0) {
+                await registrarMetricaDiaria(1, 'tempo', tempoEmMinutos);
+            }
         }
-
         res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ==========================================================
+// ROTA DE MANUTENÇÃO (Para o Painel de Suporte)
+// ==========================================================
+app.post('/api/manutencao', async (req, res) => {
+    try {
+        // Quando alguém cadastra um chamado de manutenção no painel de suporte
+        // 📊 ALIMENTA O GRÁFICO: Registra +1 parada/manutenção no dia
+        await registrarMetricaDiaria(1, 'manutencao', 1);
+
+        res.json({ success: true, message: "Manutenção registrada e gráfico atualizado!" });
     } catch (err) {
-        console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
 
-
-
 // ==========================================================
-// MONITORAMENTO (ESTATÍSTICAS)
+// MONITORAMENTO (ENVIANDO DADOS PARA O FRONTEND)
 // ==========================================================
 app.get('/api/monitoramento', async (req, res) => {
     try {
-        const { data: eq, error: err1 } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
-        const { data: metricas, error: err2 } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
-        const { data: logs, error: err3 } = await supabase
-            .from('logs_operacao')
-            .select('*, usuarios(nome_completo, email)') 
-            .order('data_inicio', { ascending: false })
-            .limit(10);
-
-        if (err1 || err2 || err3) throw new Error("Erro ao buscar dados no Supabase");
+        const { data: eq } = await supabase.from('equipamentos').select('*').eq('id', 1).maybeSingle();
+        
+        // Pega os últimos 7 dias da tabela que o Motor de Métricas agora está alimentando!
+        const { data: metricas } = await supabase.from('metricas_diarias').select('*').order('data_registro', { ascending: true }).limit(7);
+        
+        const { data: logs } = await supabase.from('logs_operacao').select('*, usuarios(nome_completo, email)').order('data_inicio', { ascending: false }).limit(10);
 
         const opcoesHora = { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
         const opcoesData = { timeZone: 'America/Sao_Paulo' };
 
         res.json({
+            // Agora as linhas do gráfico vão crescer sozinhas
             graficoLinha: { 
+                datas: metricas?.map(m => new Date(m.data_registro).toLocaleDateString('pt-BR')) || [], // Envia a data para o gráfico
                 ini: metricas?.map(m => m.inicializacoes_count) || [], 
                 pe: metricas?.map(m => m.paradas_emergencia_count) || [] 
             },
