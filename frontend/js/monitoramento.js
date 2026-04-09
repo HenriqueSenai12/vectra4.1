@@ -89,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Gráfico 3: Barras - VOLTOU A SER DUPLO (AZUL E VERMELHO)
+                // Gráfico 3: Barras - VOLTOU A SER DUPLO (AZUL E VERMELHO)
         if (document.querySelector("#bar-chart-horizontal")) {
             chartBarHorizontal = new ApexCharts(document.querySelector("#bar-chart-horizontal"), {
                 ...baseOptions,
@@ -97,11 +98,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 colors: [themeColors.cyan, themeColors.red],
                 plotOptions: { bar: { horizontal: false, borderRadius: 4, columnWidth: '40%' } },
                 xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } } },
-                yaxis: { labels: { style: { colors: themeColors.text } } },
+                
+                // 👇 AQUI: Forçamos o eixo a começar no 0 para não cortar a base das barras
+                yaxis: { 
+                    labels: { style: { colors: themeColors.text } },
+                    min: 0 
+                },
+                
+                // 👇 AQUI: Damos uma margem inferior extra (bottom: 25) para os textos não ficarem cortados
+                grid: { 
+                    ...baseOptions.grid,
+                    padding: { top: 20, right: 15, left: 10, bottom: 25 } 
+                },
+                
                 legend: { position: 'top', horizontalAlign: 'right', labels: { colors: '#fff' } }
             });
             chartBarHorizontal.render();
         }
+
     }
 
     // ==========================================
