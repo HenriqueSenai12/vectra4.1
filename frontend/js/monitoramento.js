@@ -68,7 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
             chartDonut = new ApexCharts(document.querySelector("#donut-chart"), {
                 ...baseOptions,
                 series: [1, 1, 1], 
-                labels: ['Operando', 'Manutenção', 'Parada de Emergência'],
+                // 👇 AQUI: Trocamos 'Operando' por 'Inicializado' para manter o padrão
+                labels: ['Inicializado', 'Manutenção', 'Parada de Emergência'],
                 colors: [themeColors.cyan, themeColors.yellow, themeColors.red],
                 chart: { type: 'donut', height: '100%', width: '100%' },
                 stroke: { colors: ['#0f172a'], width: 3 }, 
