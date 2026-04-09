@@ -78,11 +78,10 @@ document.addEventListener("DOMContentLoaded", () => {
             chartDonut.render();
         }
 
-               // Gráfico 3: Barras
+        // Gráfico 3: Barras
         if (document.querySelector("#bar-chart-horizontal")) {
             chartBarHorizontal = new ApexCharts(document.querySelector("#bar-chart-horizontal"), {
                 ...baseOptions,
-                // 👇 AQUI: Trocamos "Tempo" por "Inicializado" e "Paradas"
                 series: [{ name: 'Inicializado', data: [0,0,0,0,0,0,0] }, { name: 'Paradas', data: [0,0,0,0,0,0,0] }],
                 chart: { type: 'bar', height: '100%', width: '100%', stacked: true },
                 colors: [themeColors.cyan, themeColors.red],
@@ -93,7 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             chartBarHorizontal.render();
         }
-
     }
 
     // ==========================================
@@ -109,12 +107,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 gsap.to(iconAtualizar, { rotation: "+=360", duration: 0.8, ease: "power2.inOut" });
             }
 
+            // BUSCA DADOS REAIS DO BANCO
             const response = await fetch('/api/monitoramento');
             if (!response.ok) throw new Error("Falha na API");
-
             const data = await response.json();
 
-            // 3.1. ATUALIZAR CARDS SUPERIORES
+            // ---------------------------------------------------
+            // 3.1. DADOS REAIS: CARDS SUPERIORES
+            // ---------------------------------------------------
             const uptimeEl = document.getElementById('info-uptime');
             const lastBootEl = document.getElementById('info-lastboot');
             const emergencyEl = document.getElementById('info-emergency');
@@ -123,82 +123,46 @@ document.addEventListener("DOMContentLoaded", () => {
             if (lastBootEl && data.status) lastBootEl.innerText = data.status.lastBoot;
             if (emergencyEl && data.status) emergencyEl.innerText = data.status.emergencyStops;
 
-            // 3.2. ATUALIZAR GRÁFICOS
-            if (chartLine && data.graficoLinha) {
-                // 1. Atualiza as linhas com os números
-                chartLine.updateSeries([
-                    { data: data.graficoLinha.ini }, 
-                    { data: data.graficoLinha.pe }
-                ]);
-                
-                // 2. ATUALIZAÇÃO NOVA: Troca "Seg, Ter, Qua" pelas datas reais do banco!
-                if (data.graficoLinha.datas && data.graficoLinha.datas.length > 0) {
-                    chartLine.updateOptions({
-                        xaxis: { categories: data.graficoLinha.datas }
-                    });
-                }
+            // ---------------------------------------------------
+            // 3.2. DADOS SIMULADOS: GRÁFICOS (Gerados aleatoriamente)
+            // ---------------------------------------------------
+            const diasSimulados = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+            const iniSimulado = Array.from({length: 7}, () => Math.floor(Math.random() * 50) + 10); // Números entre 10 e 60
+            const peSimulado = Array.from({length: 7}, () => Math.floor(Math.random() * 10));      // Números entre 0 e 10
+
+            if (chartLine) {
+                chartLine.updateSeries([{ data: iniSimulado }, { data: peSimulado }]);
+                chartLine.updateOptions({ xaxis: { categories: diasSimulados } });
             }
             
-            // Verifica se o servidor mandou dados da rosca antes de atualizar
-            if (chartDonut && data.graficoRosca) {
-                chartDonut.updateSeries(data.graficoRosca);
+            if (chartDonut) {
+                chartDonut.updateSeries([
+                    Math.floor(Math.random() * 80) + 20, // Falso Operando
+                    Math.floor(Math.random() * 15),      // Falsa Manutenção
+                    Math.floor(Math.random() * 10)       // Falsa Emergência
+                ]);
             }
             
-            // Verifica se o servidor mandou dados da barra antes de atualizar
-                        // Verifica se o servidor mandou dados da barra antes de atualizar
-            if (chartBarHorizontal && data.graficoBarraHoriz) {
-                
-                // 1. CORREÇÃO: Agora usa tempoOperando e tempoParado (igual o server.js envia)
-                chartBarHorizontal.updateSeries([
-                    { data: data.graficoBarraHoriz.tempoOperando }, 
-                    { data: data.graficoBarraHoriz.tempoParado }
-                ]);
-
-                // 2. MELHORIA: Atualiza o eixo X para mostrar as datas reais (09/04, 10/04...) em vez de "Seg", "Ter"
-                if (data.graficoLinha.datas && data.graficoLinha.datas.length > 0) {
-                    chartBarHorizontal.updateOptions({
-                        xaxis: { categories: data.graficoLinha.datas }
-                    });
-                }
+            if (chartBarHorizontal) {
+                chartBarHorizontal.updateSeries([{ data: iniSimulado }, { data: peSimulado }]);
+                chartBarHorizontal.updateOptions({ xaxis: { categories: diasSimulados } });
             }
 
-
-            // 3.3. ATUALIZAR TABELA
+            // ---------------------------------------------------
+            // 3.3. DADOS REAIS: TABELA DE HISTÓRICO DE REGISTROS
+            // ---------------------------------------------------
             if (data.logsTabela) {
                 preencherTabelaLogs(data.logsTabela);
             }
 
             if (isManualClick && typeof showToast === 'function') {
-                showToast('Dados de monitoramento atualizados!', 'success');
+                showToast('Painel atualizado!', 'success');
             }
 
         } catch (error) {
-            console.log("🟡 API Offline. Iniciando Simulador Visual para os Gráficos...");
+            console.log("🟡 API Offline. Usando simulador na tabela também...");
             
-            // ========================================================
-            // EFEITO VISUAL DE DEMONSTRAÇÃO (Se não achar o servidor)
-            // ========================================================
-            if (chartLine) {
-                chartLine.updateSeries([
-                    { data: Array.from({length: 7}, () => Math.floor(Math.random() * 50)) }, 
-                    { data: Array.from({length: 7}, () => Math.floor(Math.random() * 20)) }
-                ]);
-            }
-            if (chartDonut) {
-                chartDonut.updateSeries([
-                    Math.floor(Math.random() * 80) + 20, 
-                    Math.floor(Math.random() * 15),      
-                    Math.floor(Math.random() * 10)       
-                ]);
-            }
-            if (chartBarHorizontal) {
-                chartBarHorizontal.updateSeries([
-                    { data: Array.from({length: 7}, () => Math.floor(Math.random() * 15)) }, 
-                    { data: Array.from({length: 7}, () => Math.floor(Math.random() * 5)) }
-                ]);
-            }
-
-            // CORREÇÃO: Dados de simulação atualizados com o 'operador'
+            // Se o servidor cair, simula a tabela também
             preencherTabelaLogs([
                 { data: 'Hoje', inicio: '08:00', fim: '12:00', tempo: '4h', operador: 'João Silva', isNormal: true },
                 { data: 'Hoje', inicio: '13:00', fim: '13:15', tempo: '15m', operador: 'Sistema', isNormal: false },
@@ -206,7 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ]);
 
             if (isManualClick && typeof showToast === 'function') {
-                showToast('Erro ao conectar na API (Modo simulação ativado).', 'error');
+                showToast('Erro ao conectar na API (Modo offline ativado).', 'error');
             }
         }
     };
@@ -220,7 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let newRowsHTML = '';
         if (!logsTabela || logsTabela.length === 0) {
-            // CORREÇÃO: colspan alterado para 6
             newRowsHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400">Nenhum registro.</td></tr>`;
         } else {
             logsTabela.forEach(log => {
@@ -232,10 +195,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span> Parada
                         </div>`;
 
-                // Tratamento caso a API real envie os dados sem o operador preenchido
                 let nomeOperador = log.operador ? log.operador : 'N/A';
 
-                // CORREÇÃO: Adicionada a tag <td>${nomeOperador}</td> na posição correta
                 newRowsHTML += `
                     <tr class="hover:bg-white/5 transition-colors">
                         <td class="py-4 px-6">${log.data}</td>
