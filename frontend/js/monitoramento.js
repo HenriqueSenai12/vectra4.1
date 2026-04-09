@@ -57,19 +57,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 stroke: { curve: 'smooth', width: 3 },
                 fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
                 xaxis: { categories: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], labels: { style: { colors: themeColors.text } } },
-                
-                // 👇 AQUI ESTÃO AS ALTERAÇÕES PARA NÃO CORTAR A LINHA
-                yaxis: { 
-                    labels: { style: { colors: themeColors.text } },
-                    min: 0, // Força o eixo a começar no zero, evitando corte na base
-                    max: (max) => { return Math.ceil(max * 1.2); } // Adiciona 20% de margem no topo, evitando corte nos bicos
-                },
-                
+                yaxis: { labels: { style: { colors: themeColors.text } } },
                 legend: { position: 'top', horizontalAlign: 'right', labels: { colors: '#fff' } }
             });
             chartLine.render();
         }
-
 
         // Gráfico 2: Donut
         if (document.querySelector("#donut-chart")) {
