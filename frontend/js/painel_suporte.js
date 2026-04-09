@@ -97,12 +97,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const result = await response.json();
 
-                if (response.ok && result.success) {
+                                if (response.ok && result.success) {
                     
-                    // LÓGICA DO SEU GRÁFICO 
+                    // ===============================================
+                    // NOVA LÓGICA DO GRÁFICO (CONECTADA AO SUPABASE)
+                    // ===============================================
                     if (categoria.toLowerCase() === 'manutenção' || categoria.toLowerCase() === 'manutencao') {
-                        let qtdManutencao = parseInt(localStorage.getItem('count_manutencao') || '0');
-                        localStorage.setItem('count_manutencao', qtdManutencao + 1);
+                        try {
+                            // Avisa o server.js para rodar o "Motor de Métricas" no banco de dados
+                            await fetch('/api/manutencao', { 
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                            console.log("Métrica de manutenção registrada no Supabase!");
+                        } catch (e) {
+                            console.error("Erro ao atualizar gráfico de manutenção:", e);
+                        }
                     }
 
                     showToast('Publicação salva com sucesso!', 'success');
@@ -112,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 1500);
 
                 } else {
+
                     showToast('Erro ao salvar: ' + result.error, 'error');
                     btnSalvar.innerHTML = textoOriginal;
                     btnSalvar.disabled = false;

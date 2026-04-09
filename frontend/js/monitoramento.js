@@ -123,19 +123,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // 3.2. ATUALIZAR GRÁFICOS
             if (chartLine && data.graficoLinha) {
+                // 1. Atualiza as linhas com os números
                 chartLine.updateSeries([
                     { data: data.graficoLinha.ini }, 
                     { data: data.graficoLinha.pe }
                 ]);
+                
+                // 2. ATUALIZAÇÃO NOVA: Troca "Seg, Ter, Qua" pelas datas reais do banco!
+                if (data.graficoLinha.datas && data.graficoLinha.datas.length > 0) {
+                    chartLine.updateOptions({
+                        xaxis: { categories: data.graficoLinha.datas }
+                    });
+                }
             }
             
-            if (chartDonut && data.graficoRosca) chartDonut.updateSeries(data.graficoRosca);
+            // Verifica se o servidor mandou dados da rosca antes de atualizar
+            if (chartDonut && data.graficoRosca) {
+                chartDonut.updateSeries(data.graficoRosca);
+            }
+            
+            // Verifica se o servidor mandou dados da barra antes de atualizar
             if (chartBarHorizontal && data.graficoBarraHoriz) {
                 chartBarHorizontal.updateSeries([
                     { data: data.graficoBarraHoriz.ini }, 
                     { data: data.graficoBarraHoriz.pe }
                 ]);
             }
+
 
             // 3.3. ATUALIZAR TABELA
             if (data.logsTabela) {
